@@ -76,7 +76,6 @@ def drawBoard(board):
     lastFrame.pack()
 
 def player(board):
-    print board
     global playerAction
     drawBoard(board)
     while playerAction == None:

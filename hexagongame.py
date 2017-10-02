@@ -49,27 +49,27 @@ class Grid:
 		y = obj.y
 		#the coordinates the neighbours can have from the chosen hexagon
 		relOddCoords = [
-			(0, -1),
-			(1, -1),
-			(1, 0),
-			(0, 1),
 			(-1, 0),
+			(-1, 1),
+			(0, 1),
+			(1, 0),
+			(0, -1),
 			(-1, -1)
 		]
 
 		relEvenCoords = [
-			(0, -1),
-			(1, 0),
-			(1, 1),
+			(-1, 0),
 			(0, 1),
-			(-1, 1),
-			(1, 0)
+			(1, 1),
+			(1, 0),
+			(1, -1),
+			(0, -1)
 		]
 
 		neighbours = []
 		for coord in relEvenCoords if x % 2 == 0 else relOddCoords:
-			newx = x + coord[0]
-			newy = y + coord[1]
+			newy = y + coord[0]
+			newx = x + coord[1]
 			if newx < self.width and newx >= 0 and newy <= self.height and newy >= 0 and self.grid[newy][newx] != None:
 				neighbours.append(self.grid[newy][newx])
 		return neighbours
