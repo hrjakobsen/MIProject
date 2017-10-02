@@ -12,7 +12,7 @@ class Hexagon:
 		#the names of each player to show which hexagons the player owns
 		names = ["o","p"]
 		#colour is a number
-		return self.colour.__str__() if self.owner == None else names[self.owner]
+		return (self.colour.__str__() if self.owner == None else names[self.owner])
 
 	def __repr__(self):
 		return self.__str__()
@@ -48,17 +48,26 @@ class Grid:
 		x = obj.x
 		y = obj.y
 		#the coordinates the neighbours can have from the chosen hexagon
-		relCoords = [
+		relOddCoords = [
+			(0, -1),
+			(1, -1),
+			(1, 0),
+			(0, 1),
+			(-1, 0),
+			(-1, -1)
+		]
+
+		relEvenCoords = [
 			(0, -1),
 			(1, 0),
 			(1, 1),
 			(0, 1),
 			(-1, 1),
-			(-1, 0)
+			(1, 0)
 		]
 
 		neighbours = []
-		for coord in relCoords:
+		for coord in relEvenCoords if x % 2 == 0 else relOddCoords:
 			newx = x + coord[0]
 			newy = y + coord[1]
 			if newx < self.width and newx >= 0 and newy <= self.height and newy >= 0 and self.grid[newy][newx] != None:
@@ -69,7 +78,7 @@ class Grid:
 		return [hexagon for row in self.grid for hexagon in filter(lambda x: x != None, row)]
 
 class HexagonGameDriver:
-	def __init__(self, player1, player2):
+	def __init__(self, player1, player2, finish=None):
 		self.player1 = player1
 		self.player2 = player2
 		#size of the grid
@@ -77,6 +86,8 @@ class HexagonGameDriver:
 		#where each of the players start
 		self.board.grid[0][0].owner = 0
 		self.board.grid[4][8].owner = 1
+		#callback for finished game
+		self.finish = finish
 		#the game starts
 		self.playGame()
 
@@ -92,6 +103,8 @@ class HexagonGameDriver:
 				action = self.player2(self.board)
 			self.makeMove(player1Turn, action)
 			player1Turn = not player1Turn
+		if self.finish != None:
+			self.finish(self.board)
 
 	def makeMove(self, player1Turn, action):
 		player = 0 if player1Turn else 1
@@ -117,7 +130,7 @@ class HexagonGameDriver:
 		for hexagon in player1hexagons: #if the player has more moves available
 			neighbours += self.board.getNeighbours(hexagon)
 		if len(filter(lambda x: x.owner == None, neighbours)) == 0:
-			for h in self.board.getHexagons():
+			for h in filter(lambda x: x.owner == None, self.board.getHexagons()):
 				h.owner = 1
 			return True
 
@@ -125,7 +138,7 @@ class HexagonGameDriver:
 		for hexagon in player2hexagons:
 			neighbours += self.board.getNeighbours(hexagon)
 		if len(filter(lambda x: x.owner == None, neighbours)) == 0:
-			for h in self.board.getHexagons():
+			for h in filter(lambda x: x.owner == None, self.board.getHexagons()):
 				h.owner = 0
 			return True
 
@@ -133,14 +146,12 @@ class HexagonGameDriver:
 
 #the board for player 1
 def play1(board):
-	print board
+	print(board)
 	action = int(raw_input("P1: next move? "))	
 	return action
 
 #the board for player 2
 def play2(board):
-	print board
+	print(board)
 	action = int(raw_input("P2: next move? "))
 	return action
-
-game = HexagonGameDriver(play1, play2)
