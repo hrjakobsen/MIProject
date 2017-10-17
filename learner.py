@@ -23,8 +23,8 @@ def getHash(board):
     # can be in one of 15 states (5 colors * 3 owned-states)
     # This means that each cell can be stored in a single 
     # base-16 character
-       
-    return ''.join([format(int(i), 'x') if i != - 1 else "" for i in np.nditer(board.T)])
+    lookUp = ['', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e']
+    return ''.join([lookUp[int(i) + 1] for i in np.nditer(board.T)])
 
 def makeMove(board, player, action):
     # Do everything on a copy to ensure stateless-ness
@@ -165,13 +165,6 @@ def pointsAround(point):
         neighbours.append([newY, newX])
     return neighbours
 
-
-class Board(object):
-
-    def __init__(self, height, width):
-        self.height = height
-        self.width = width
-
 class HexLearner(object):
     # This class is an implementation of the Q-Learning-Agent
     # from Russel & Norvig (2010) p. 844
@@ -180,6 +173,7 @@ class HexLearner(object):
         self.Q = Q
         self.N = N
         self.s = None
+        self.hash = None
         self.a = None
         self.r = None
         self.player = player
@@ -192,7 +186,8 @@ class HexLearner(object):
             self.incrementN()
             self.updateQ(state, reward)
         self.s = state
-        self.a = self.argmax(state)
+        self.hash = getHash(state)
+        self.a = self.argmax()
         self.r = reward
         return self.a
     
@@ -204,53 +199,39 @@ class HexLearner(object):
         if (s, a) not in self.N:
             self.N[s, a] = 0
     
-    def argmax(self, state):
+    def argmax(self):
         vals = []
-        s = getHash(state)
-        for a in self.actions:
-            self.initializeQ(s, a)
-            self.initializeN(s, a)
-            vals.append(self.f(self.Q[s, a], self.N[s, a]))
+        s = self.hash
+        vals = [self.f(self.Q.get((s, a), 0), self.N.get((s, a), 0)) for a in self.actions]
         return self.actions.index(vals.index(max(vals)))
             
     
     def f(self, val, num):
-        if num < 1:
-            return 1
+        if num < 10:
+            return 100
         return val
     
     def incrementN(self):
-        s = getHash(self.s)
+        s = self.hash
         a = self.a
         self.initializeN(s, a)
         self.N[s, a] += 1
     
     def updateQ(self, sP, rP):
-        s = getHash(self.s)
+        s = self.hash
+        sPh = getHash(sP)
         a = self.a
         self.initializeQ(s, a)
-        self.Q[s, a] = self.Q[s, a] + self.alpha() * (self.r + self.getBestQToSp(sP) - self.Q[s, a])
+        self.Q[s, a] = self.Q[s, a] + self.alpha() * (self.r + max([self.Q.get((sPh, aP), 0) for aP in self.actions]) - self.Q[s, a])
         
     def alpha(self):
-        return 1 / self.N[getHash(self.s), self.a]
-    
-    def getBestQToSp(self, sP):
-        newState = getHash(sP)
-        bestAction = None
-        bestQ = -1000000000000
-        for a in self.actions:
-            self.initializeQ(newState, a)
-            if self.Q[newState, a] > bestQ:
-                bestAction = a
-                bestQ = self.Q[newState, a]
-        return bestQ
+        return 60 / (59 + self.N[self.hash, self.a])
 
 import time
 from IPython.display import clear_output
 
-def learn(trials, epsilon):
-    NUMTRIALS = trials
-    EPSILON = epsilon
+    NUMTRIALS = 1000
+    EPSILON = 0.1
     latestQ1 = {}
     latestN1 = {}
     latestQ2 = {}
@@ -284,26 +265,31 @@ def learn(trials, epsilon):
         latestQ2 = agent2.Q
         latestN2 = agent2.N
 
-        #if x % (NUMTRIALS / 1000) == 0 and x > 0:
-            #elapsedSec = time.time() - startTime
-            #gamesPerSec = x / elapsedSec
-            #remainingSec = str(round((NUMTRIALS - x) / gamesPerSec, 2))
-            #percentDone = str(round(x / NUMTRIALS * 100, 2))
-
-            #clear_output(wait=True)
-            #print(percentDone + "% done - " + remainingSec + "s remaining")
-
-    print("\nDone! - Took " + str(round(time.time() - startTime, 2)) + "s. Saw " + str(len(latestQ1)) + " states")
-    return latestQ1, latestN1  
+    print("\nDone! - Played " + str(NUMTRIALS) + " games. Took " + str(round(time.time() - startTime, 2)) + "s. Saw " + str(len(latestQ1)) + " states")
 
 import cProfile, pstats
 np.random.seed(0)
 
-pr = cProfile.Profile()
-pr.enable()
-latestQ1, latestN1 = learn(5000, 0.1)
-pr.disable()
-ps = pstats.Stats(pr).sort_stats('tottime')
-ps.print_stats()
+#pr = cProfile.Profile()
+#pr.enable()
+#learnedQ1, learnedN1 = learn(1000, 0.1)
+#pr.disable()
+#ps = pstats.Stats(pr).sort_stats('tottime')
+#ps.print_stats()
 
-#print(latestQ1)
+#ps.print_stats()
+
+import json
+import ast
+
+def saveToFile(dict, fileName):
+    with open(fileName, 'w') as fp:
+        json.dump({str(k): v for k, v in dict.items()}, fp)
+
+def loadFromFile(fileName):
+    with open(fileName, 'r') as fp:
+        return {ast.literal_eval(k): v for k, v in json.load(fp).items()}
+
+print(loadFromFile("q.json"))
+
+#print(learnedQ1)
