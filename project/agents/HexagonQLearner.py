@@ -42,13 +42,10 @@ class HexLearner(object):
         :param reward: the current reward
         :return: the action to play in this state
         """
-        if state.gameEnded():
-            self.Q[state, None] = reward
         if self.s is not None:
             self._incrementN()
             self._updateQ(state, reward)
         self.s = copy.deepcopy(state)
-        self.hash = state.hash()
         self.a = self._argmax()
         self.r = reward
         return self.a
@@ -57,7 +54,7 @@ class HexLearner(object):
         """
         :return: the action that results in the highest value from the f-function
         """
-        s = self.hash
+        s = self.s.hash()
         vals = [self._f(self.Q.get((s, a), 0), self.N.get((s, a), 0)) for a in self.actions]
         return self.actions.index(vals.index(max(vals)))
 
@@ -78,7 +75,7 @@ class HexLearner(object):
         Increments the number of times the agent have seen a state
         :return:
         """
-        s = self.hash
+        s = self.s.hash()
         a = self.a
         self.N[s, a] = self.N.get((s, a), 0) + 1
 
@@ -89,7 +86,7 @@ class HexLearner(object):
         :param rP: The current reward
         :return:
         """
-        s = self.hash
+        s = self.s.hash()
         sPh = sP.hash()
         a = self.a
         self.Q[s, a] = self.Q.get((s, a), 0) + self._alpha() * (
@@ -97,10 +94,18 @@ class HexLearner(object):
 
     def _alpha(self):
         """
-        The learning rate parameter is decreasig over time
+        The learning rate parameter is decreasing over time
         :return: the current learning rate parameter for the last state and action
         """
-        return 60 / (59 + self.N[self.hash, self.a])
+        return 60 / (59 + self.N.get((self.s.hash(), self.a), 0))
+
+    def finalize(self, state, reward):
+        if self.s is None:
+            return
+        for a in self.actions:
+            self.Q[state.hash(), a] = reward
+
+        self._updateQ(state, reward)
 
     @classmethod
     def load(cls, player):

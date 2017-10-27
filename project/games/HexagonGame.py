@@ -148,7 +148,7 @@ def getReward(game, player):
     :return: -0.04 for a non-terminal state, 1 for a win, -1 for a loss
     """
     if not gameEnded(game):
-        return -0.04
+        return -.04
 
     height = game.shape[0]
     width = game.shape[1]
@@ -224,8 +224,10 @@ class HexagonGame(object):
     def hash(self):
         return self._hash
 
-    def makeMove(self, action, player):
-        self.board = makeMove(self.board, action, player)
+    def makeMove(self, player, action):
+        if action is None:
+            return
+        self.board = makeMove(self.board, player, action)
         self._hash = getHash(self.board)
 
     def getReward(self, player):
@@ -237,5 +239,5 @@ class HexagonGame(object):
     def __deepcopy__(self, _):
         new = HexagonGame(self.width, self.height)
         new.board = self.board
-        new._hash = self.hash
+        new._hash = self._hash
         return new
