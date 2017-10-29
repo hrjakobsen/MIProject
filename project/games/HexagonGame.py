@@ -1,8 +1,5 @@
 import numpy as np
 
-np.random.seed(0)
-
-
 def randomGame(width, height):
     """ Generates a random hexagon board
     :param width: width of board
@@ -37,10 +34,10 @@ def getHash(board):
     """
 
     lookUp = ['0', '1', '2', '3', '4', 'a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b', 'b', '']
-    return ''.join([lookUp[int(i)] for i in np.nditer(board.T)])
+    return ''.join([lookUp[int(i)] for i in np.nditer(board)])
 
 
-def makeMove(board, player, action):
+def makeMove(board, neighbourMap, player, action):
     """
     Performs a move on the board and creates an updated version of the board
     :param board: The board to update
@@ -63,7 +60,8 @@ def makeMove(board, player, action):
         point = frontier.pop()
         board[point[0], point[1]] = action + player * 5
 
-        neighbours = pointsAround(point)
+        #neighbours = pointsAround(point)
+        neighbours = neighbourMap[point[0]][point[1]]
 
         # Find the neighbours that are inside the board and
         # have the color of the action and add them to the frontier 
@@ -76,7 +74,7 @@ def makeMove(board, player, action):
 
     # If a player has no more moves, the other player is rewarded
     # the rest of the cells on the board
-    board = finaliseBoard(board, player)
+    board = finaliseBoard(board, neighbourMap, player)
     return board
 
 
@@ -100,7 +98,7 @@ def getOwnedCells(board, player):
     return frontier
 
 
-def finaliseBoard(board, playerCall):
+def finaliseBoard(board, neighbourMap, playerCall):
     """
     Updates the board if the game is terminated, such that players are
     given the remainder of the cells if the opponent cannot reach them.
@@ -119,7 +117,8 @@ def finaliseBoard(board, playerCall):
 
     # Check if the player has a valid action that gains more cells
     for cell in frontier:
-        neighbours = pointsAround(cell)
+        #neighbours = pointsAround(cell)
+        neighbours = neighbourMap[cell[0]][cell[1]]
         for neighbour in neighbours:
             if (0 <= neighbour[0] < height
                 and 0 <= neighbour[1] < width
@@ -148,7 +147,7 @@ def getReward(game, player):
     :return: -0.04 for a non-terminal state, 1 for a win, -1 for a loss
     """
     if not gameEnded(game):
-        return -.04
+        return -0.04
 
     height = game.shape[0]
     width = game.shape[1]
@@ -178,7 +177,6 @@ def gameEnded(board):
     """
     return not np.any(np.logical_and(board >= 0, board < 5))
 
-
 def pointsAround(point):
     """
     Get the neighbouring coordinates of a point
@@ -186,6 +184,7 @@ def pointsAround(point):
     :return: a list of neighbouring coordinates
     """
     y, x = point[0], point[1]
+
     relOddCoords = [
         (-1, 0),
         (-1, 1),
@@ -211,12 +210,52 @@ def pointsAround(point):
         newY = y + coord[0]
         newX = x + coord[1]
         neighbours.append([newY, newX])
+
     return neighbours
+
+
+def generateNeighbours(width, height):
+    neighbourPositions = []
+
+    relOddCoords = [
+        (-1, 0),
+        (-1, 1),
+        (0, 1),
+        (1, 0),
+        (0, -1),
+        (-1, -1)
+    ]
+
+    relEvenCoords = [
+        (-1, 0),
+        (0, 1),
+        (1, 1),
+        (1, 0),
+        (1, -1),
+        (0, -1)
+    ]
+
+    neighbourPositions = [[0 for x in range(width)] for y in range(height + 1)] 
+
+    for y in range(height + 1):
+        for x in range(width):
+            odd = x % 2 == 1
+            neighbours = []
+
+            for coord in relOddCoords if odd else relEvenCoords:
+                newY = y + coord[0]
+                newX = x + coord[1]
+                neighbours.append([newY, newX])
+
+            neighbourPositions[y][x] = neighbours
+
+    return neighbourPositions
 
 
 class HexagonGame(object):
     def __init__(self, width, height):
         self.board = randomGame(width, height)
+        self.neighbourMap = generateNeighbours(width, height)
         self._hash = getHash(self.board)
         self.width = width
         self.height = height
@@ -227,7 +266,7 @@ class HexagonGame(object):
     def makeMove(self, player, action):
         if action is None:
             return
-        self.board = makeMove(self.board, player, action)
+        self.board = makeMove(self.board, self.neighbourMap, player, action)
         self._hash = getHash(self.board)
 
     def getReward(self, player):
@@ -239,5 +278,6 @@ class HexagonGame(object):
     def __deepcopy__(self, _):
         new = HexagonGame(self.width, self.height)
         new.board = self.board
+        new.neighbourMap = self.neighbourMap
         new._hash = self._hash
         return new

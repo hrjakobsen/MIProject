@@ -1,18 +1,15 @@
 from games.HexagonGame import HexagonGame
 import copy
-import json
-import ast
-
+import pickle
+import os.path
 
 def saveToFile(dict, fileName):
-    with open(fileName, 'w') as fp:
-        json.dump({str(k): v for k, v in dict.items()}, fp)
-
+    with open(fileName, 'wb') as handle:
+        pickle.dump(dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def loadFromFile(fileName):
-    with open(fileName, 'r') as fp:
-        return {ast.literal_eval(k): v for k, v in json.load(fp).items()}
-
+    with open(fileName, 'rb') as handle:
+        return pickle.load(handle)
 
 class HexLearner(object):
     """
@@ -66,8 +63,8 @@ class HexLearner(object):
         :param num: The number of times the state has been visited
         :return: val if the state has been visited more than 10 times, otherwise 100
         """
-        if num < 10:
-            return 100
+        if num < 5:
+            return 2
         return val
 
     def _incrementN(self):
@@ -102,6 +99,7 @@ class HexLearner(object):
     def finalize(self, state, reward):
         if self.s is None:
             return
+            
         for a in self.actions:
             self.Q[state.hash(), a] = reward
 
@@ -109,9 +107,16 @@ class HexLearner(object):
 
     @classmethod
     def load(cls, player):
-        return cls(player, loadFromFile("saves/P" + str(player) + "_Q.json"),
-                   loadFromFile("saves/P" + str(player) + "_N.json"))
+        if os.path.isfile("saves/P" + str(player) + "_Q.pickle") and os.path.isfile("saves/P" + str(player) + "_N.pickle"):
+            return cls(player, loadFromFile("saves/P" + str(player) + "_Q.pickle"),
+                       loadFromFile("saves/P" + str(player) + "_N.pickle"))
+
+        print("No save-file was found for player" + str(player) + ". Creating empty agent")
+        return cls(player, {}, {})
 
     def save(self):
-        saveToFile(self.Q, "saves/P" + str(self.player) + "_Q.json")
-        saveToFile(self.N, "saves/P" + str(self.player) + "_N.json")
+        if not os.path.exists("saves"):
+            os.makedirs("saves")
+
+        saveToFile(self.Q, "saves/P" + str(self.player) + "_Q.pickle")
+        saveToFile(self.N, "saves/P" + str(self.player) + "_N.pickle")
