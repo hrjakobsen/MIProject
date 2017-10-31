@@ -105,6 +105,8 @@ class HexLearner(object):
 
         self._updateQ(state, reward)
 
+        self.s = None
+
     @classmethod
     def load(cls, player):
         if os.path.isfile("saves/P" + str(player) + "_Q.pickle") and os.path.isfile("saves/P" + str(player) + "_N.pickle"):
