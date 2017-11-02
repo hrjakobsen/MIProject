@@ -6,13 +6,13 @@ class HexFALearner(object):
         self.width = width
         self.height = height
         self.batchSize = batchSize
-        self.weights = weights if weights is not None else [0.5] * (7 * ((height + 1) * width - (width // 2)) + 1)
+        self.weights = weights if weights is not None else [0] * (7 * ((height + 1) * width - (width // 2)) + 1)
         self.s = None
         self.a = None
         self.actions = [0, 1, 2, 3, 4]
         self.gamma = 1
         self.batch = []
-        self.batches = 0
+        self.numBatches = 0
 
 
     def getMove(self, state: HexagonGame, reward):
@@ -25,7 +25,7 @@ class HexFALearner(object):
         if len(self.batch) >= self.batchSize:
             self._updateWeights()
             self.batch = []
-            self.batches += 1
+            self.numBatches += 1
 
         maxQ = self._calculateQ(state, 0)
         bestAction = 0
@@ -45,16 +45,23 @@ class HexFALearner(object):
 
         return bestAction
 
+
     def _updateWeights(self):
         newWeights = self.weights.copy()
-        for i in range(len(self.weights)):
-            batchSum = 0
-            for batch in self.batch:
-                batchSum += 2 * (batch['Q'] - self._calculateQ(batch['state'], batch['action'])) * -1 * (self._feature(i, batch['state'], batch['action']))
+        differences = []
 
-            newWeights[i] -= self._alpha() * batchSum
+        for batch in self.batch:
+            differences.append(batch['Q'] - self._calculateQ(batch['state'], batch['action']))
+
+        for j, _ in enumerate(self.weights):
+            batchSum = 0
+            for i, batch in enumerate(self.batch):
+                batchSum += 2 * (differences[i]) * -1 * (self._feature(j, batch['state'], batch['action']))
+
+            newWeights[j] -= (1 / len(self.batch)) * self._alpha() * batchSum
 
         self.weights = newWeights
+
 
     def _feature(self, featureNumber, state: HexagonGame, action):
         if featureNumber == 0:
@@ -100,7 +107,7 @@ class HexFALearner(object):
         The learning rate parameter is decreasing over time
         :return: the current learning rate parameter for the last state and action
         """
-        return 60 / (60 + self.batches)
+        return 60 / (60 + self.numBatches)
 
 
     def finalize(self, state, reward):

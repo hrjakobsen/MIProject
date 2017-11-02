@@ -15,8 +15,8 @@ def learn(agent1, agent2, numGames, epsilon, width, height):
     startGame = HexagonGame(width, height)
 
     for x in range(numGames):
-        game = HexagonGame(width, height)
-        #game = copy.deepcopy(startGame)
+        #game = HexagonGame(width, height)
+        game = copy.deepcopy(startGame)
 
         if p2Start:
             makeMove(agent2, game, 2, epsilon)
@@ -47,15 +47,15 @@ def makeMove(agent, game, player, epsilon):
 
 np.random.seed(0)
 
-width = 2
-height = 2
+width = 5
+height = 5
 
 agent1 = HexFALearner(1, width, height, 50)
 print(agent1.weights)
 print(len(agent1.weights))
 agent2 = HexRandom()
 
-numGames = 1000
+numGames = 100
 startTime = time.time()
 
 wins = learn(agent1, agent2, numGames, 0.1, width, height)
