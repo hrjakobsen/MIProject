@@ -1,4 +1,6 @@
 from games.HexagonGame import HexagonGame
+import math
+import numpy as np
 
 class HexFALearner(object):
     def __init__(self, player, width, height, batchSize, weights=None):
@@ -6,7 +8,8 @@ class HexFALearner(object):
         self.width = width
         self.height = height
         self.batchSize = batchSize
-        self.weights = weights if weights is not None else [0] * (7 * ((height + 1) * width - (width // 2)) + 1)
+        self.numWeights = len(weights) if weights is not None else 7 * ((height + 1) * width - (width // 2)) + 1
+        self.weights = np.array(weights) if weights is not None else np.ones(self.numWeights)
         self.s = None
         self.a = None
         self.actions = [0, 1, 2, 3, 4]
@@ -30,7 +33,7 @@ class HexFALearner(object):
         maxQ = self._calculateQ(state, 0)
         bestAction = 0
 
-        for action in self.actions:
+        for action in range(1, len(self.actions)):
             Q = self._calculateQ(state, action)
             if Q > maxQ:
                 maxQ = Q
@@ -51,17 +54,15 @@ class HexFALearner(object):
         differences = []
 
         for batch in self.batch:
-            differences.append(batch['Q'] - self._calculateQ(batch['state'], batch['action']))
+            differences.append(-1 * (batch['Q'] - self._calculateQ(batch['state'], batch['action'])))
 
-        for j, _ in enumerate(self.weights):
+        for j in range(self.numWeights):
             batchSum = 0
             for i, batch in enumerate(self.batch):
-                batchSum += 2 * (differences[i]) * -1 * (self._feature(j, batch['state'], batch['action']))
-
-            newWeights[j] -= (1 / len(self.batch)) * self._alpha() * batchSum
+                batchSum += differences[i] * self._feature(j, batch['state'], batch['action'])
+            newWeights[j] -= (self._alpha() * 2 * batchSum) / len(self.batch)
 
         self.weights = newWeights
-
 
     def _feature(self, featureNumber, state: HexagonGame, action):
         if featureNumber == 0:
@@ -71,35 +72,27 @@ class HexFALearner(object):
         # 0-4: colors, 5, 6: P1 and P2
         code = correctedFeatureNumber % 7
 
-        # Each even column is one longer than height
-        x = 0
-        y = correctedFeatureNumber // 7
-        while y >= self.height + 1 - x % 2:
-            y -= self.height + 1 - x % 2
-            x += 1
-
-        # Skip top element in each odd column
-        y += x % 2
+        cellNumber = correctedFeatureNumber // 7
+        height = self.height + 1
+        x = math.floor(cellNumber / (height - 0.5))
+        yP = cellNumber % (height * 2 - 1)
+        y = yP % height + yP // height
 
         if code < 5:
-            temp = state.board[y, x] == code
-            return temp
+            return state.board[y, x] == code
 
         if code == 5:
-            temp = 5 <= state.board[y, x] < 10
-            return temp
+            return 5 <= state.board[y, x] < 10
 
         if code == 6:
-            temp = state.board[y, x] >= 10
-            return temp
+            return state.board[y, x] >= 10
 
     def _calculateQ(self, state, action):
-        total = 0
+        features = np.empty(self.numWeights)
+        for x in range(self.numWeights):
+            features[x] = (self._feature(x, state, action))
 
-        for x in range(len(self.weights)):
-            total += self.weights[x] * self._feature(x, state, action)
-
-        return total
+        return np.sum(self.weights * features)
 
 
     def _alpha(self):
@@ -111,13 +104,21 @@ class HexFALearner(object):
 
 
     def finalize(self, state, reward):
-        maxQ = -9999999
+        if len(self.batch) >= self.batchSize:
+            self._updateWeights()
+            self.batch = []
+            self.numBatches += 1
 
-        for action in self.actions:
+        maxQ = self._calculateQ(state, 0)
+
+        for action in range(1, len(self.actions)):
             Q = self._calculateQ(state, action)
             if Q > maxQ:
                 maxQ = Q
 
         if self.s is not None:
             q = (1 - self._alpha()) * self._calculateQ(self.s, self.a) + self._alpha() * (reward + self.gamma * maxQ)
-            self.batch.append({"state": self.s, "action": self.a, "Q": q})
+            self.batch.append({"state": self.s, "action": self.a, "Q": reward})
+
+        self.s = None
+        self.a = None

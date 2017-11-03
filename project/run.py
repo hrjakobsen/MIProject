@@ -5,7 +5,6 @@ from agents.HexagonFALearner import HexFALearner
 import numpy as np
 import time
 import copy
-import os.path
 
 def learn(agent1, agent2, numGames, epsilon, width, height):
     p2Start = False
@@ -45,22 +44,25 @@ def makeMove(agent, game, player, epsilon):
         action = np.random.randint(5)
     game.makeMove(player, action)
 
+
+np.set_printoptions(suppress=True, precision=2)
+
 np.random.seed(0)
 
-width = 5
-height = 5
+width = 3
+height = 3
 
-agent1 = HexFALearner(1, width, height, 50)
-print(agent1.weights)
-print(len(agent1.weights))
+agent007 = HexFALearner(1, width, height, 50)
+print(agent007.weights)
+print(len(agent007.weights))
 agent2 = HexRandom()
 
-numGames = 100
+numGames = 200
 startTime = time.time()
 
-wins = learn(agent1, agent2, numGames, 0.1, width, height)
+wins = learn(agent007, agent2, numGames, 0.1, width, height)
 
 print("\nDone! - Played {0} games. Took {1}s. Won {2} games.".format(str(numGames), str(
     round(time.time() - startTime, 2)), str(wins)))
 
-print(agent1.weights)
+print(agent007.weights)
