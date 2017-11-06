@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 def randomGame(width, height):
     """ Generates a random hexagon board
@@ -259,6 +260,10 @@ class HexagonGame(object):
         self._hash = getHash(self.board)
         self.width = width
         self.height = height
+        self._features = None
+
+    def getActions(self):
+        return [0, 1, 2, 3, 4]
 
     def hash(self):
         return self._hash
@@ -280,4 +285,69 @@ class HexagonGame(object):
         new.board = self.board
         new.neighbourMap = self.neighbourMap
         new._hash = self._hash
+        new._features = self._features
         return new
+
+    def getFeaturesOld(self, player):
+        if self._features is not None:
+            return self._features
+
+        features = []
+        self._features = [lambda state, action: 1]
+
+        #Features are functions of state, action
+        height = self.height + 1
+        numOfCells = height * self.width - self.width // 2
+        colors = [
+            lambda x: x == 0,
+            lambda x: x == 1,
+            lambda x: x == 2,
+            lambda x: x == 3,
+            lambda x: x == 4,
+            lambda x: 5 <= x < 10,
+            lambda x: 10 <= x < 15,
+        ]
+        for cell in range(numOfCells):
+            for color in colors:
+                i = cell
+                x = math.floor(i / (height - 0.5))
+                y = i-math.ceil(x*(height-1/2))+ x % 2
+
+                features.append(lambda state, y=y, x=x, color=color: int(color(state.board[y, x])))
+
+        for action in self.getActions():
+            for feature in features:
+                self._features.append(lambda s, a, action=action, feature=feature: 0 if a != action else feature(s))
+
+        return self._features
+
+    def getFeatures(self, player):
+        if self._features != None:
+            return self._features
+
+        self._features = [
+            lambda state, action: 1,
+            lambda state, action: ownedCellsByColor(player, state, action),
+            lambda state, action: getAreaOfPlayer(player, state, action)
+        ]
+
+        return self._features
+
+
+def ownedCellsByColor(player, state: HexagonGame, color):
+    ownedCellsBefore = len(getOwnedCells(state.board, player))
+    newBoard = makeMove(state.board, state.neighbourMap, player, color)
+    ownedCellsNow = len(getOwnedCells(newBoard, player))
+    return (ownedCellsNow - ownedCellsBefore) / (state.width * (state.height + 1))
+
+def getAreaOfPlayer(player, state, action):
+    board = makeMove(state.board, state.neighbourMap, player, action)
+    cells = getOwnedCells(board, player)
+    top, right, bottom, left = cells[0][0], cells[0][1], cells[0][0], cells[0][1]
+    for cell in cells:
+        top = min(top, cell[0])
+        right = max(right, cell[1])
+        bottom = max(bottom, cell[0])
+        left = min(left, cell[1])
+
+    return ((right - left)*(bottom-top)) / ((state.width * (state.height + 1)))
