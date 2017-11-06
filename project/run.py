@@ -3,10 +3,10 @@ from agents.HexagonQLearner import HexLearner
 from agents.HexagonFunctionApproximator import QFunctionApproximator
 from agents.HexagonRandom import HexRandom
 from agents.GreedyHexAgent import GreedyHexAgent
+
 import numpy as np
 import time
 import copy
-import os.path
 
 def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
     p2Start = False
@@ -17,7 +17,7 @@ def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
 
     for x in range(numGames):
         game = HexagonGame(width, height)
-        #game = copy.deepcopy(startGame)
+
 
         if p2Start:
             makeMove(agent2, game, 2, epsilon)
@@ -28,7 +28,6 @@ def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
                 break
 
             makeMove(agent2, game, 2, epsilon)
-
 
         agent1.finalize(game, game.getReward(1))
         agent2.finalize(game, game.getReward(2))
@@ -48,23 +47,28 @@ def makeMove(agent, game, player, epsilon):
         agent.s = None
     game.makeMove(player, action)
 
+
+np.set_printoptions(suppress=True, precision=2)
+
 np.random.seed(0)
 g = HexagonGame(7, 7)
 features = len(g.getFeatures(1))
 agent1 = QFunctionApproximator(1, features, g.getActions(), gamma=1, batchSize=50)
 agent2 = GreedyHexAgent(2)
 numGames = 10000
-startTime = time.time()
 
+startTime = time.time()
 wins = learn(agent1, agent2, numGames, 0.1)
 
 print("\nDone! - Played {0} games. Took {1}s. Won {2} games.".format(str(numGames), str(
     round(time.time() - startTime, 2)), str(wins)))
 
+
 numGames = 100
+startTime = time.time()
 wins = learn(agent1, agent2, numGames, 0.1, 11, 11)
 
 print("\nDone! - Played {0} games. Took {1}s. Won {2} games.".format(str(numGames), str(
     round(time.time() - startTime, 2)), str(wins)))
 
-print(agent1.weights)
+

@@ -34,7 +34,7 @@ def getHash(board):
     :return: hashed string of board
     """
 
-    lookUp = ['0', '1', '2', '3', '4', 'a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b', 'b', '']
+    lookUp = ['0', '1', '2', '3', '4', 'a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b', '']
     return ''.join([lookUp[int(i)] for i in np.nditer(board)])
 
 
