@@ -14,7 +14,7 @@ class QFunctionApproximator(object):
 
     def Q(self, state, action):
         features = np.asarray([feature(state, action) for feature in state.getFeatures(self.player)])
-        return np.sum(features * self.weights)
+        return np.sum(np.dot(features, self.weights))
 
     def getMove(self, state, reward):
         self.updateBatch(state, reward)
@@ -44,7 +44,7 @@ class QFunctionApproximator(object):
         self.batches += 1
 
     def alpha(self):
-        return 60 / (60 + self.batches)
+        return 0.0001
 
     def finalize(self, state, reward):
         self.updateBatch(state, reward)

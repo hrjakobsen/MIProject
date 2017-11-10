@@ -236,7 +236,7 @@ def generateNeighbours(width, height):
         (0, -1)
     ]
 
-    neighbourPositions = [[0 for x in range(width)] for y in range(height + 1)] 
+    neighbourPositions = [[0 for x in range(width)] for y in range(height + 1)]
 
     for y in range(height + 1):
         for x in range(width):
@@ -262,7 +262,8 @@ class HexagonGame(object):
         self.height = height
         self._features = None
 
-    def getActions(self):
+    @staticmethod
+    def getActions():
         return [0, 1, 2, 3, 4]
 
     def hash(self):
@@ -322,7 +323,7 @@ class HexagonGame(object):
         return self._features
 
     def getFeatures(self, player):
-        if self._features != None:
+        if self._features is not None:
             return self._features
 
         self._features = [
@@ -339,6 +340,7 @@ def ownedCellsByColor(player, state: HexagonGame, color):
     newBoard = makeMove(state.board, state.neighbourMap, player, color)
     ownedCellsNow = len(getOwnedCells(newBoard, player))
     return (ownedCellsNow - ownedCellsBefore) / (state.width * (state.height + 1))
+
 
 def getAreaOfPlayer(player, state, action):
     board = makeMove(state.board, state.neighbourMap, player, action)

@@ -13,11 +13,13 @@ class Regressor(object):
         self.called = 0
 
     def train(self, dataset):
-        for example in dataset:
-            error = self.targetFeature(example) - self.predict(example)
-            update = self.alpha()*error
-            for j in range(len(self.weights)):
-                self.weights[j] = self.weights[j] + update * self.features[j](example)
+        number_of_weights = len(self.weights)
+        new_weights = np.zeros(number_of_weights)
+
+        for j in range(number_of_weights):
+            new_weights[j] = self.weights[j] + self.alpha() \
+                    * (sum([(self.targetFeature(d) - self.predict(d)) * self.features[j](d) / len(dataset) for d in dataset]))
+        self.weights = new_weights
 
     def predict(self, values):
         values = np.asarray([feature(values) for feature in self.features])
@@ -29,12 +31,12 @@ class Regressor(object):
 
     def alpha(self):
         self.called += 1
-        alpha = 0.0001
+        alpha = 0.00001
         return alpha
 
 
 def getDatapoints():
-    return np.random.randint(0, 5, 1000)
+    return np.random.randint(0, 500, 50)
 
 
 def main():
@@ -48,21 +50,13 @@ def main():
     errs = []
     err = 1
 
-
-
-    r.train(getDatapoints())
-    r.train(getDatapoints())
-    r.train(getDatapoints())
-    r.train(getDatapoints())
-    r.train(getDatapoints())
-    r.train(getDatapoints())
-
+    for _ in range(10000):
+        p = getDatapoints()
+        r.train(p)
+        print(r.MSE(p))
 
     x = range(len(errs))
     y = errs
-
-    # matplotlib.pyplot.plot(x, y, '-o')
-    # matplotlib.pyplot.show()
 
     print(r.MSE(getDatapoints()))
     print(r.weights)

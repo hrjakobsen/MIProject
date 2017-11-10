@@ -63,6 +63,7 @@ wins = learn(agent1, agent2, numGames, 0.1)
 print("\nDone! - Played {0} games. Took {1}s. Won {2} games.".format(str(numGames), str(
     round(time.time() - startTime, 2)), str(wins)))
 
+agent2 = HexRandom()
 
 numGames = 100
 startTime = time.time()
