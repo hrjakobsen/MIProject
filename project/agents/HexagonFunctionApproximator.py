@@ -37,14 +37,16 @@ class QFunctionApproximator(object):
             newWeights = []
             differences = [data[2] - self.Q(data[0], data[1]) for data in self.batch]
             for j in range(len(self.weights)):
-                newWeights.append(self.weights[j] - self.alpha() * (1 / self.batchSize) * 2 * sum([differences[i] * (-state.getFeatures(self.player)[j](data[0], data[1])) for i, data in enumerate(self.batch)]))
+                newWeights.append(self.weights[j] - self.alpha() * (1 / self.batchSize) * 2 * sum([differences[i] * (state.getFeatures(self.player)[j](data[0], data[1])) for i, data in enumerate(self.batch)]))
             self.weights = np.asarray(newWeights)
             self.batch = []
 
         self.batches += 1
 
+        #print(self.weights)
+
     def alpha(self):
-        return 0.0001
+        return 0.001
 
     def finalize(self, state, reward):
         self.updateBatch(state, reward)

@@ -1,9 +1,9 @@
 from games.HexagonGame import HexagonGame
 import numpy as np
 
-class HexRandom(object):
-    def __init__(self):
-        self.actions = [0, 1, 2, 3, 4]
+class RandomAgent(object):
+    def __init__(self, actions):
+        self.actions = actions
 
     def getMove(self, state: HexagonGame, reward):
         """

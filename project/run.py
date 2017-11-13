@@ -1,7 +1,7 @@
 from games.HexagonGame import HexagonGame
-from agents.HexagonQLearner import HexLearner
+from games.pong import PongGame
 from agents.HexagonFunctionApproximator import QFunctionApproximator
-from agents.HexagonRandom import HexRandom
+from agents.AgentRandom import RandomAgent
 from agents.GreedyHexAgent import GreedyHexAgent
 
 import numpy as np
@@ -12,8 +12,6 @@ def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
     p2Start = False
     p1Wins = 0
     interval = numGames / 100
-
-    startGame = HexagonGame(width, height)
 
     for x in range(numGames):
         game = HexagonGame(width, height)
@@ -34,7 +32,7 @@ def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
         
         p2Start = not p2Start
         p1Wins += 1 if game.getReward(1) == 1 else 0
-        if (x % interval == 0):
+        if x % interval == 0:
             print("\rPlayed %s/%s games" % (x, numGames), end="")
 
     return p1Wins
@@ -49,7 +47,6 @@ def makeMove(agent, game, player, epsilon):
 
 
 np.set_printoptions(suppress=True, precision=2)
-
 np.random.seed(0)
 g = HexagonGame(7, 7)
 features = len(g.getFeatures(1))
@@ -63,7 +60,7 @@ wins = learn(agent1, agent2, numGames, 0.1)
 print("\nDone! - Played {0} games. Took {1}s. Won {2} games.".format(str(numGames), str(
     round(time.time() - startTime, 2)), str(wins)))
 
-agent2 = HexRandom()
+agent2 = RandomAgent(g.getActions())
 
 numGames = 100
 startTime = time.time()
@@ -71,5 +68,4 @@ wins = learn(agent1, agent2, numGames, 0.1, 11, 11)
 
 print("\nDone! - Played {0} games. Took {1}s. Won {2} games.".format(str(numGames), str(
     round(time.time() - startTime, 2)), str(wins)))
-
 
