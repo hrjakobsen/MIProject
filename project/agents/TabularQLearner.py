@@ -11,13 +11,13 @@ def loadFromFile(fileName):
     with open(fileName, 'rb') as handle:
         return pickle.load(handle)
 
-class HexLearner(object):
+class TabularQLearner(object):
     """
     This class is an implementation of the Q-Learning-Agent
     from Russel & Norvig (2010) p. 844
     """
 
-    def __init__(self, player, Q={}, N={}):
+    def __init__(self, actions, Q, N, gamma=1):
         """
         :param player: the player id of the agent (1 or 2)
         :param Q: The Q table to use
@@ -25,12 +25,12 @@ class HexLearner(object):
         """
         self.Q = Q
         self.N = N
+        self.actions = actions
+        self.gamma = gamma
         self.s = None
         self.hash = None
         self.a = None
         self.r = None
-        self.player = player
-        self.actions = [0, 1, 2, 3, 4]
 
     def getMove(self, state: HexagonGame, reward):
         """
@@ -63,7 +63,7 @@ class HexLearner(object):
         :param num: The number of times the state has been visited
         :return: val if the state has been visited more than 10 times, otherwise 100
         """
-        if num < 5:
+        if num < 2:
             return 2
         return val
 
@@ -87,14 +87,14 @@ class HexLearner(object):
         sPh = sP.hash()
         a = self.a
         self.Q[s, a] = self.Q.get((s, a), 0) + self._alpha() * (
-            self.r + max([self.Q.get((sPh, aP), 0) for aP in self.actions]) - self.Q.get((s, a), 0))
+            self.r + self.gamma * (max([self.Q.get((sPh, aP), 0) for aP in self.actions]) - self.Q.get((s, a), 0)))
 
     def _alpha(self):
         """
         The learning rate parameter is decreasing over time
         :return: the current learning rate parameter for the last state and action
         """
-        return 60 / (59 + self.N.get((self.s.hash(), self.a), 0))
+        return 100 / (10000 + self.N.get((self.s.hash(), self.a), 0))
 
     def finalize(self, state, reward):
         if self.s is None:
