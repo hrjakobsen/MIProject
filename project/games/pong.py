@@ -136,11 +136,10 @@ def getFeatures(player):
     features = [
         lambda s, a: 1,
         # the position of the paddle after a move
-        lambda s, a: paddlePositions(s, a, player)[0],
         lambda s, a: paddlePositions(s, a, player)[1],
         # the position of the ball after a move
         lambda s, a: makePlayerMove(s, a, player).ballPosition[0],
-        lambda s, a: makePlayerMove(s, a, player).ballPosition[0],
+        lambda s, a: makePlayerMove(s, a, player).ballPosition[1],
         # the velocity of the ball after a move
         lambda s, a: makePlayerMove(s, a, player).ballVelocity[0],
         lambda s, a: makePlayerMove(s, a, player).ballVelocity[1],
