@@ -143,7 +143,7 @@ def getFeatures(player):
         # the velocity of the ball after a move
         lambda s, a: makePlayerMove(s, a, player).ballVelocity[0],
         lambda s, a: makePlayerMove(s, a, player).ballVelocity[1],
-#        lambda s, a: distanceToBall(s, a, player)
+        lambda s, a: distanceToBall(s, a, player)
     ]
 
     return features
@@ -151,7 +151,7 @@ def getFeatures(player):
 def distanceToBall(s, a, player):
     s2 = makePlayerMove(s, a, player)
     paddleY = s2.p1pos if player == 1 else s2.p2pos
-    return min(1 / ((s2.ballPosition[1] - paddleY) ** 2), 99999999999)
+    return math.log2(1 / max(((s2.ballPosition[1] - paddleY) ** 2), 0.00001))
 
 def makePlayerMove(s, a, player):
     return makeMove(s, a, NOTHING) if player == 1 else makeMove(s, NOTHING, a)

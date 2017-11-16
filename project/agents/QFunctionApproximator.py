@@ -41,8 +41,6 @@ class QFunctionApproximator(object):
             #self.momentumGradientDescent(state)
 
 
-        #print(self.weights)
-
     def alpha(self):
         return 0.01 #60/(self.batches + 60*40)
 
