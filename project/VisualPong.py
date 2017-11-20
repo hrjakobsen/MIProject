@@ -2,14 +2,14 @@ import pygame
 import numpy as np
 import time
 
-from agents.AgentRandom import RandomAgent
-from agents.HexagonFunctionApproximator import QFunctionApproximator
+from agents.RandomAgent import RandomAgent
+from agents.QFunctionApproximator import QFunctionApproximator
 from games.pong import PongGame, makeMove
 
 np.set_printoptions(suppress=True, precision=2)
 np.random.seed(0)
 paddleDrawWidth = 4
-gameSizeModifier = 4
+gameSizeModifier = 2
 
 
 def drawGame(surface, game: PongGame, p1wins, numgames, myfont):
