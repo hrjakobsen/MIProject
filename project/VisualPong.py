@@ -1,9 +1,8 @@
 import pygame
 import numpy as np
 import time
-
-from agents.RandomAgent import RandomAgent
-from agents.QFunctionApproximator import QFunctionApproximator
+from agents.NeuralNetworkAgent import NeuralNetworkAgent
+from agents.PingPongAgent import PongAgent
 from games.pong import PongGame, makeMove
 
 np.set_printoptions(suppress=True, precision=2)
@@ -72,8 +71,8 @@ def learnPong(epsilon):
     game = PongGame()
 
     features = len(game.getFeatures(1))
-    agent1 = QFunctionApproximator(1, features, game.getActions(), gamma=1, batchSize=100)
-    agent2 = QFunctionApproximator(1, features, game.getActions(), gamma=1, batchSize=50)
+    agent1 = PongAgent(1)
+    agent2 = NeuralNetworkAgent(2, features, game.getActions(), gamma=.5, batchSize=10000)
 
     while isRunning:
         if displayGame:
@@ -108,7 +107,7 @@ def learnPong(epsilon):
             agent2.finalize(game, agent2Reward)
             p1Wins += 1 if game.getReward(1) == 1 else 0
             numGames += 1
-            print(agent1.weights)
+            #print(agent1.weights)
             game = PongGame()
             if not displayGame:
                 surface.fill((200, 200, 200))
