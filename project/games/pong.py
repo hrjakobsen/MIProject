@@ -6,11 +6,14 @@ UP = 1
 NOTHING = 0
 DOWN = -1
 
+pongWidth = 100
+pongHeight= 50
+
 
 class PongGame(object):
     def __init__(self):
-        self.width = 500
-        self.height = 200
+        self.width = pongWidth
+        self.height = pongHeight
         self.p1pos = self.height // 2
         self.p2pos = self.height // 2
         self.actions = [UP, DOWN, NOTHING]
@@ -155,7 +158,7 @@ def paddleUpdate(state, action, player):
     return max(min(state.height - state.paddleHeight // 2, myPos + state.paddleSpeed * action), state.paddleHeight // 2)
 
 
-def getFeatures(player):
+def getFeaturesOld(player):
     features = [
         lambda s, a: 1,
         # the position of the paddle after a move
@@ -165,12 +168,47 @@ def getFeatures(player):
         # lambda s, a: makePlayerMove(s, a, player).ballPosition[1],
         # the velocity of the ball after a move
         # lambda s, a: makePlayerMove(s, a, player).ballVelocity[0],
-        # ambda s, a: makePlayerMove(s, a, player).ballVelocity[1],
+        # lambda s, a: makePlayerMove(s, a, player).ballVelocity[1],
 
         lambda s, a: distanceToBall(s, a, player),
     ]
 
     return features
+
+
+# one-hot encoding
+def getFeatures(player):
+    features = [
+        lambda s, a: 1,
+        lambda s, a: makePlayerMove(s, a, player).ballVelocity[0],
+        lambda s, a: makePlayerMove(s, a, player).ballVelocity[1],
+    ]
+    # the height of the board
+    for y in range(pongHeight):
+        features.append(lambda s, a, yPos=y: oneHotEncodedPaddle(player, yPos, s, a))
+    for y in range(pongHeight):
+        features.append(lambda s, a, yPos=y: oneHotEncodedBallY(player, yPos, s, a))
+    for x in range(pongWidth):
+        features.append(lambda s, a, xPos=x: oneHotEncodedBallX(player, xPos, s, a))
+    return features
+
+
+def oneHotEncodedPaddle(player, y, s: PongGame, a):
+    newS = makePlayerMove(s, a, player)
+    paddlePos = newS.p1pos if player == 1 else newS.p2pos
+    return 1 if abs(paddlePos - y) <= newS.paddleHeight // 2 else 0
+
+
+def oneHotEncodedBallY(player, y, s: PongGame, a):
+    newS = makePlayerMove(s, a, player)
+    ballPosY = newS.ballPosition[1]
+    return 1 if abs(ballPosY - y) <= newS.ballRadius else 0
+
+
+def oneHotEncodedBallX(player, x, s: PongGame, a):
+    newS = makePlayerMove(s, a, player)
+    ballPosY = newS.ballPosition[0]
+    return 1 if abs(ballPosY - x) <= newS.ballRadius else 0
 
 
 def distanceToBall(s, a, player):
