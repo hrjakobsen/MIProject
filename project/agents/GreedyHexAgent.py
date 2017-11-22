@@ -16,4 +16,5 @@ class GreedyHexAgent(object):
             newBoard = makeMove(currentBoard, state.neighbourMap, self.player, a)
             if len(getOwnedCells(newBoard, self.player)) > maxCells:
                 bestA = a
+                maxCells = len(getOwnedCells(newBoard, self.player))
         return bestA
