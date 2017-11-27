@@ -5,7 +5,7 @@ class RandomAgent(object):
     def __init__(self, actions):
         self.actions = actions
 
-    def getMove(self, state: HexagonGame, reward):
+    def getMove(self, state, reward):
         """
         Ask the agent what action to take
         :param state: the current game

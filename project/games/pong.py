@@ -9,27 +9,36 @@ DOWN = -1
 pongWidth = 100
 pongHeight= 50
 
-
 class PongGame(object):
-    def __init__(self):
+    def __init__(self, ballVelocity=None):
         self.width = pongWidth
         self.height = pongHeight
         self.p1pos = self.height // 2
         self.p2pos = self.height // 2
-        self.actions = [UP, DOWN, NOTHING]
-        direction = np.random.randint(180, size=1)[0]
-        if direction < 90:
-            direction -= 45
-        else:
-            direction += 45
+        self.actions = [NOTHING, UP, DOWN]
+        if ballVelocity is None:
+            direction = np.random.randint(180)
+            if direction < 90:
+                direction -= 45
+            else:
+                direction += 45
 
-        velocity = [math.cos(direction * math.pi / 180), math.sin(direction * math.pi / 180)]
-        self.ballVelocity = np.array(velocity)
+            dirRad = direction * math.pi / 180
+            self.ballVelocity = np.array([math.cos(dirRad), math.sin(dirRad)])
+
         self.ballPosition = np.array([self.width // 2, self.height // 2])
         self.ballRadius = 2.5
         self.paddleSpeed = 0.5
         self.paddleHeight = 20
         self.winner = None
+        self.numFeatures = None
+
+    def __deepcopy__(self, _):
+        new = PongGame(self.ballVelocity)
+        new.p1pos = self.p1pos
+        new.p2pos = self.p2pos
+        new.ballPosition = self.ballPosition
+        return new
 
     def getActions(self):
         return self.actions
@@ -37,19 +46,18 @@ class PongGame(object):
     def gameEnded(self):
         return self.winner is not None
 
-    def getFeatures(self, player):
-        return getFeatures(player)
+    def getNumFeatures(self):
+        if self.numFeatures is None:
+            self.numFeatures = len(calculateFeatures(self, 0, 1))
+
+        return self.numFeatures
+
+    def calculateFeatures(self, state, action, player):
+        return calculateFeatures(state, action, player)
 
     def getReward(self, player):
         return getReward(self, player)
 
-    def __deepcopy__(self, _):
-        new = PongGame()
-        new.p1pos = self.p1pos
-        new.p2pos = self.p2pos
-        new.ballVelocity = self.ballVelocity
-        new.ballPosition = self.ballPosition
-        return new
 
 
 def updateBall(state: PongGame):
@@ -182,6 +190,7 @@ def getFeatures(player):
         lambda s, a: 1,
         lambda s, a: makePlayerMove(s, a, player).ballVelocity[0],
         lambda s, a: makePlayerMove(s, a, player).ballVelocity[1],
+        #lambda s, a: distanceToBall(s, a, player)
     ]
     # the height of the board
     for y in range(pongHeight):
@@ -217,6 +226,26 @@ def distanceToBall(s, a, player):
     return math.log2(1 / max(((s2.ballPosition[1] - paddleY) ** 2), 0.00001))
 
 
+def calculateFeatures(state, action, player):
+    nextState = makePlayerMove(state, action, player)
+
+    results = np.array([
+        1,
+        #nextState.p1pos if player == 1 else nextState.p2pos,
+        #nextState.ballPosition[0],
+        #nextState.ballPosition[1],
+        #nextState.ballVelocity[0],
+        #nextState.ballVelocity[1],
+        distanceToBall(nextState, player)
+    ])
+
+    return results
+
+def distanceToBall(s, player):
+    paddleY = s.p1pos if player == 1 else s.p2pos
+
+    return (s.ballPosition[1] - paddleY) ** 2
+
 def makePlayerMove(s, a, player):
     return makeMove(s, a, NOTHING) if player == 1 else makeMove(s, NOTHING, a)
 
@@ -225,7 +254,7 @@ def getReward(state: PongGame, player):
     if state.winner is None:
         return 0
     # 1 for winning and -1 for losing
-    return 1 if player == state.winner else -1
+    return 100 if player == state.winner else -100
 
 
 def paddlePositions(state: PongGame, action, player):

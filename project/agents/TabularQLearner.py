@@ -63,8 +63,8 @@ class TabularQLearner(object):
         :param num: The number of times the state has been visited
         :return: val if the state has been visited more than 10 times, otherwise 100
         """
-        if num < 2:
-            return 2
+        if num < 20:
+            return 2000
         return val
 
     def _incrementN(self):
@@ -94,7 +94,7 @@ class TabularQLearner(object):
         The learning rate parameter is decreasing over time
         :return: the current learning rate parameter for the last state and action
         """
-        return 100 / (10000 + self.N.get((self.s.hash(), self.a), 0))
+        return 1#100 / (10000 + self.N.get((self.s.hash(), self.a), 0))
 
     def finalize(self, state, reward):
         if self.s is None:
@@ -116,9 +116,9 @@ class TabularQLearner(object):
         print("No save-file was found for player" + str(player) + ". Creating empty agent")
         return cls(player, {}, {})
 
-    def save(self):
+    def save(self, player):
         if not os.path.exists("saves"):
             os.makedirs("saves")
 
-        saveToFile(self.Q, "saves/P" + str(self.player) + "_Q.pickle")
-        saveToFile(self.N, "saves/P" + str(self.player) + "_N.pickle")
+        saveToFile(self.Q, "saves/P" + str(player) + "_Q.pickle")
+        saveToFile(self.N, "saves/P" + str(player) + "_N.pickle")
