@@ -1,7 +1,7 @@
 from games.HexagonGame import HexagonGame
 from agents.TabularQLearner import TabularQLearner
-from agents.HexagonFunctionApproximator import QFunctionApproximator
-from agents.AgentRandom import RandomAgent
+from agents.QFunctionApproximator import QFunctionApproximator
+from agents.RandomAgent import RandomAgent
 from agents.GreedyHexAgent import GreedyHexAgent
 
 import numpy as np
