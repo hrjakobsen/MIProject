@@ -1,21 +1,23 @@
 import pygame
 import numpy as np
 import time
-from agents.NeuralNetworkAgent import NeuralNetworkAgent
-from agents.PingPongAgent import PongAgent
+import math
+
 from agents.RandomAgent import RandomAgent
 from agents.QFunctionApproximator import QFunctionApproximator
 from games.pong import PongGame, makeMove, pongWidth, pongHeight
 
-np.set_printoptions(suppress=True, precision=2)
+np.set_printoptions(suppress=True, precision=4  )
 np.random.seed(0)
 paddleDrawWidth = 4
-gameSizeModifier = 10
-
+gameSizeModifier = 2
 
 def drawGame(surface, game: PongGame, p1wins, numgames, myfont):
+    global frame
+    frequency = 0.01
+
     # paddle 1
-    pygame.draw.rect(surface, (0, 255, 0),
+    pygame.draw.rect(surface, (30, 160, 0),
                      (0,
                       int(game.p1pos - game.paddleHeight // 2) * gameSizeModifier,
                       paddleDrawWidth * gameSizeModifier,
@@ -28,24 +30,23 @@ def drawGame(surface, game: PongGame, p1wins, numgames, myfont):
                       game.paddleHeight * gameSizeModifier))
 
     bx, by = game.ballPosition * gameSizeModifier + paddleDrawWidth
-    pygame.draw.circle(surface,
-                       (255, 0, 0),
+    pygame.draw.circle(surface, (255, 50, 50),
                        (int(bx + game.ballRadius * gameSizeModifier), int(by)),
                        int(game.ballRadius * gameSizeModifier))
 
     text = myfont.render(str(p1wins), 1, (0, 0, 0))
-    surface.blit(text, (pongWidth * gameSizeModifier // 2 + paddleDrawWidth - pongWidth * gameSizeModifier // 4,
+    surface.blit(text, (game.width * gameSizeModifier // 2 + paddleDrawWidth - game.width * gameSizeModifier // 4,
                         pongHeight * gameSizeModifier // 8))
 
     text = myfont.render(str(numgames - p1wins), 1, (0, 0, 0))
-    surface.blit(text, (pongWidth * gameSizeModifier // 2 + paddleDrawWidth + pongWidth * gameSizeModifier // 4,
+    surface.blit(text, (game.width * gameSizeModifier // 2 + paddleDrawWidth + pongWidth * gameSizeModifier // 4,
                         pongHeight * gameSizeModifier // 8))
 
+    frame += 1
 
 def drawTraining(surface, myfont, numgames):
     text = myfont.render("Training...", 1, (255, 0, 0))
     surface.blit(text, (pongWidth * gameSizeModifier // 2, pongHeight * gameSizeModifier // 2))
-
     text = myfont.render("game {0}".format(str(numgames)), 1, (255, 0, 0))
     surface.blit(text, (pongWidth * gameSizeModifier // 2, pongHeight * gameSizeModifier // 6))
 
@@ -53,7 +54,7 @@ def drawTraining(surface, myfont, numgames):
 def getMove(agent, game: PongGame, player, epsilon):
     action = agent.getMove(game, game.getReward(player))
     if np.random.rand() < epsilon:
-        action = np.random.randint(3)
+        action = agent.actions[np.random.randint(3)]
         agent.s = None
     return action
 
@@ -73,13 +74,12 @@ def learnPong(epsilon):
     game = PongGame()
 
     features = len(game.getFeatures(1))
-<<<<<<< HEAD
-    agent1 = PongAgent(1)
-    agent2 = NeuralNetworkAgent(2, features, game.getActions(), gamma=.5, batchSize=10000)
-=======
     agent1 = QFunctionApproximator(1, features, game.getActions(), gamma=1, batchSize=100)
     agent2 = RandomAgent(game.getActions()) #QFunctionApproximator(2, features, game.getActions(), gamma=1, batchSize=50)
->>>>>>> c65cf1fa4f00accaa2ca79356302823b168f855d
+    features = game.getNumFeatures()
+    agent1 = QFunctionApproximator(1, features, game.getActions(), gamma=1, batchSize=1000)
+    #agent2 = QFunctionApproximator(2, features, game.getActions(), gamma=1, batchSize=1000)
+    agent2 = RandomAgent(game.getActions())
 
     while isRunning:
         if displayGame:
@@ -111,9 +111,13 @@ def learnPong(epsilon):
             agent2Reward = game.getReward(2)
             agent1.finalize(game, agent1Reward)
             agent2.finalize(game, agent2Reward)
-            p1Wins += 1 if game.getReward(1) == 1 else 0
+            p1Wins += 1 if agent1Reward > 0 else 0
             numGames += 1
-            #print(agent1.weights)
+
+            print(agent1.weights)
+            print(len(agent1.batch))
+            print()
+
             game = PongGame()
 
             if not displayGame:
@@ -121,8 +125,9 @@ def learnPong(epsilon):
                 drawTraining(surface, myfont, numGames)
                 pygame.display.flip()
 
-        #if displayGame:
-        #    pygame.time.delay(1)
+        if displayGame:
+            pass
+            #pygame.time.delay(50)
 
     startTime = time.time()
     print("\nDone! - Played {0} games. Took {1}s. Won {2} games.".format(str(numGames), str(

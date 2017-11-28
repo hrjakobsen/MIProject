@@ -17,9 +17,11 @@ def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
 
     startGame = HexagonGame(width, height)
 
+    print(startGame.board)
+
     for x in range(numGames):
-        #game = copy.deepcopy(startGame)
-        game = HexagonGame(width, height)
+        game = copy.deepcopy(startGame)
+        #game = HexagonGame(width, height)
 
         if p2Start:
             makeMove(agent2, game, 2, epsilon)
@@ -54,34 +56,38 @@ def makeMove(agent, game, player, epsilon):
 
 np.set_printoptions(suppress=True, precision=2)
 np.random.seed(0)
-g = HexagonGame(1, 1)
-agent1 = TabularQLearner(g.getActions(), {}, {}, 1)
-agent2 = RandomAgent(g.getActions())
 
-numGames = 100000
+numGames = 50000#0000
 width = 3
 height = 3
 
+g = HexagonGame(width, height)
+agent1 = TabularQLearner.load(1)#TabularQLearner(g.getActions(), {}, {}, 1)
+agent2 = RandomAgent(g.getActions())
+
 startTime = time.time()
-outcomes = learn(agent1, agent2, numGames, 0.1, width, height)
+outcomes = learn(agent1, agent2, numGames, 0.5, width, height)
 print("\nDone! - Played {0} games. Took {1}s. Won {2} games.".format(str(numGames), str(
     round(time.time() - startTime, 2)), str(len([g for g in outcomes if g == 1]))))
 
-print(outcomes)
+#print(outcomes)
 
 p1Wins = []
+wonGames = 0
 for i in range(len(outcomes)):
     if outcomes[i] == 1:
-        p1Wins.append(i)
+        wonGames += 1
+    p1Wins.append(wonGames)
 
-print(p1Wins)
+#print(p1Wins)
 
+agent1.save(1)
+print(len(agent1.Q))
 
-num_bins = numGames // 50
+#plt.plot(p1Wins)
+#plt.show()
 
-fig, ax = plt.subplots()
+#num_bins = numGames // 100
+#n, bins, patches = ax.hist(p1Wins, num_bins, normed=0, histtype='step', cumulative=True)
+#n, bins, patches = ax.hist(p1Wins, num_bins, normed=0)
 
-n, bins, patches = ax.hist(p1Wins, num_bins, normed=0)
-
-fig.tight_layout()
-plt.show()
