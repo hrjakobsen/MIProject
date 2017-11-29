@@ -1,6 +1,13 @@
 import numpy as np
 import math
 
+WATER = 0
+SHIP = 1
+WATERHIT = 2
+SHIPHIT = 3
+
+boardSize = 11
+
 
 class BattleshipGame(object):
     def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5], board1=None, board2=None):
@@ -77,8 +84,6 @@ class BattleshipGame(object):
                         for cell in ship:
                             boardHits.remove(cell[0])
 
-
-
 def randomBoard(boardSize, ships):
     board = np.zeros((boardSize, boardSize), dtype=int)
     shipsList = []
@@ -94,7 +99,7 @@ def randomBoard(boardSize, ships):
                 col = np.random.randint(0, boardSize - ship)
 
                 for i in range(ship):
-                    if board[row, col + i] != 0:
+                    if board[row, col + i] != WATER:
                         placeable = False
                         break
 
@@ -111,7 +116,7 @@ def randomBoard(boardSize, ships):
                 row = np.random.randint(0, boardSize - ship)
 
                 for i in range(ship):
-                    if board[row + i, col] != 0:
+                    if board[row + i, col] != WATER:
                         placeable = False
                         break
 
