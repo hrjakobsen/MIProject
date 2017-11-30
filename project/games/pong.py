@@ -40,7 +40,7 @@ class PongGame(object):
         new.ballPosition = self.ballPosition
         return new
 
-    def getActions(self):
+    def getActions(self, player):
         return self.actions
 
     def gameEnded(self):

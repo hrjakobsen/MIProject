@@ -1,7 +1,7 @@
 import numpy as np
 
 class QFunctionApproximator(object):
-    def __init__(self, player, actions, numFeatures, batchSize=100, gamma=1, decay=0.99, alpha=0.1):
+    def __init__(self, player, numFeatures, batchSize=100, gamma=1, decay=0.99, alpha=0.1):
         self.player = player
         self.weights = np.ones(numFeatures) * 1
         self.s, self.a, self.r = None, None, None
@@ -10,7 +10,6 @@ class QFunctionApproximator(object):
         self.batchSize = batchSize
         self.gamma = gamma
         self.mu = 0.999
-        self.actions = actions
         self.q = None
 
         #Momentum
