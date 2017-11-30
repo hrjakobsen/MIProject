@@ -11,6 +11,7 @@ np.set_printoptions(suppress=True, precision=4  )
 np.random.seed(0)
 paddleDrawWidth = 4
 gameSizeModifier = 2
+frame = 0
 
 def drawGame(surface, game: PongGame, p1wins, numgames, myfont):
     global frame
@@ -52,9 +53,10 @@ def drawTraining(surface, myfont, numgames):
 
 
 def getMove(agent, game: PongGame, player, epsilon):
-    action = agent.getMove(game, game.getReward(player))
+    actions = game.getActions(player)
+    action = agent.getMove(game, game.getReward(player), actions)
     if np.random.rand() < epsilon:
-        action = agent.actions[np.random.randint(3)]
+        action = actions[np.random.randint(len(actions))]
         agent.s = None
     return action
 
@@ -73,13 +75,9 @@ def learnPong(epsilon):
 
     game = PongGame()
 
-    features = len(game.getFeatures(1))
-    agent1 = QFunctionApproximator(1, features, game.getActions(), gamma=1, batchSize=100)
-    agent2 = RandomAgent(game.getActions()) #QFunctionApproximator(2, features, game.getActions(), gamma=1, batchSize=50)
     features = game.getNumFeatures()
-    agent1 = QFunctionApproximator(1, features, game.getActions(), gamma=1, batchSize=1000)
-    #agent2 = QFunctionApproximator(2, features, game.getActions(), gamma=1, batchSize=1000)
-    agent2 = RandomAgent(game.getActions())
+    agent1 = QFunctionApproximator(1, features, gamma=1, batchSize=1000)
+    agent2 = RandomAgent()
 
     while isRunning:
         if displayGame:
@@ -126,8 +124,7 @@ def learnPong(epsilon):
                 pygame.display.flip()
 
         if displayGame:
-            pass
-            #pygame.time.delay(50)
+            pygame.time.delay(20)
 
     startTime = time.time()
     print("\nDone! - Played {0} games. Took {1}s. Won {2} games.".format(str(numGames), str(

@@ -24,7 +24,7 @@ np.set_printoptions(suppress=True, precision=2)
 np.random.seed(0)
 g = HexagonGame(1, 1)
 agent1 = TabularQLearner(g.getActions(), {}, {}, 1)
-agent2 = RandomAgent(g.getActions())
+agent2 = RandomAgent()
 
 numGames = 100000
 width = 5
