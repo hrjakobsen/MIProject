@@ -1,4 +1,4 @@
-from games.battleship import BattleshipGame
+from games.battleshipSingle import BattleshipGame
 from agents.QFunctionApproximator import QFunctionApproximator
 from agents.RandomAgent import RandomAgent
 import matplotlib.pyplot as plt
@@ -38,8 +38,8 @@ def makeMove(agent, game, player, epsilon):
 np.random.seed(0)
 
 numGames = 1000
-boardSize = 5
-ships = [2, 3]
+boardSize = 6
+ships = [5]#, 3, 4, 5]
 
 g = BattleshipGame(boardSize, ships)
 agent = QFunctionApproximator(1, g.getActions(1), g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.99, alpha=0.1)
@@ -47,9 +47,9 @@ agent = QFunctionApproximator(1, g.getActions(1), g.getNumFeatures(), batchSize=
 startTime = time.time()
 outcomes = train(agent, numGames, 0.1, boardSize, ships)
 
-print("\nDone! - Trained on {0} games. Took {1}s.".format(str(numGames), str(
-    round(time.time() - startTime, 2))))
+print("\nDone! - Trained on {0} games. Took {1}s.".format(str(numGames), str(round(time.time() - startTime, 2))))
 
 print(outcomes)
+print(np.mean(outcomes))
 plt.plot(outcomes)
 plt.show()
