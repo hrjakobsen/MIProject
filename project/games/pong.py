@@ -257,8 +257,13 @@ def getAngle(s, player):
 
     vector = getVectorBetweenBallAndPaddle(s, player)
     lengthOfPaddleVec = math.sqrt(vector[0] * vector[0] + vector[1] * vector[1])
+
+    #avoid division by 0
+    lengthOfPaddleVec = 0.000001 if lengthOfPaddleVec == 0 else lengthOfPaddleVec
     dotProduct = np.dot(vector, s.ballVelocity)
     angle = math.acos(dotProduct / np.dot(lengthOfPaddleVec, 1))
+
+    #angle in degrees
     angle *= 180/math.pi
 
     return angle

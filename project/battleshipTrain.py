@@ -16,7 +16,7 @@ def train(agent, numGames, epsilon, boardSize, ships):
         while not game.gameEnded():
             makeMove(agent, game, 1, epsilon)
 
-        agent.finalize(game, game.getReward(1))
+        agent.finalize(game, game.getReward(1), game.getActions())
 
         if x % interval == 0:
             print("\rTrained %s/%s games %s" % (x, numGames, agent.weights), end="")

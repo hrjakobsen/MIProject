@@ -77,7 +77,7 @@ def learnVisual(agent, numGames, boardSize, ships, epsilon):
                 drawBattleship(game, surface)
                 pygame.display.flip()
 
-        agent.finalize(game, game.getReward(1))
+        agent.finalize(game, game.getReward(1), action)
 
 numTrain = 1000
 trainBoardSize = 6
