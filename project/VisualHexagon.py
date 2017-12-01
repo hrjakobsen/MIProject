@@ -1,8 +1,9 @@
 from agents.GreedyHexAgent import GreedyHexAgent
 from agents.QFunctionApproximator import QFunctionApproximator
-from games.HexagonGame import HexagonGame
+from games.hexagon import HexagonGame
 from agents.TabularQLearner import TabularQLearner
 from agents.RandomAgent import RandomAgent
+from agents.hexagonBruteforce import HexagonBruteForce3
 
 import pygame
 import numpy as np
@@ -13,9 +14,9 @@ gameSizeModifier = 150
 
 
 def makeMove(agent, game, player, epsilon):
-    action = agent.getMove(game, game.getReward(player))
+    action = agent.getMove(game, game.getReward(player), game.getActions())
     if np.random.rand() < epsilon:
-        action = g.getActions()[np.random.randint(5)]
+        action = g.getActions()[np.random.randint(len(game.getActions()))]
         agent.s = None
     game.makeMove(player, action)
 
@@ -23,13 +24,10 @@ def makeMove(agent, game, player, epsilon):
 np.set_printoptions(suppress=True, precision=2)
 np.random.seed(0)
 g = HexagonGame(1, 1)
-agent1 = TabularQLearner(g.getActions(), {}, {}, 1)
-agent2 = RandomAgent()
 
-numGames = 100000
+numGames = 1
 width = 5
 height = 5
-
 
 def drawHexagon(game: HexagonGame, surface):
     for x in range(game.width):
@@ -79,8 +77,10 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
 
     isRunning = True
 
-    agent2 = TabularQLearner(g.getActions(), {}, {}, 1)
-    agent1 = GreedyHexAgent(1) #QFunctionApproximator(2, len(game.getFeatures(2)), game.getActions(), gamma=1, batchSize=100)#RandomAgent(g.getActions())
+    agent1 = HexagonBruteForce3(game, 1) #GreedyHexAgent(1) #QFunctionApproximator(2, len(game.getFeatures(2)), game.getActions(), gamma=1, batchSize=100)#RandomAgent(g.getActions())
+    agent2 = TabularQLearner({}, {}, 1)
+
+    agent1.save()
 
     playerTurn = 1
 
@@ -100,8 +100,8 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
             reward1 = runningGame.getReward(1)
             reward2 = runningGame.getReward(2)
 
-            agent1.finalize(runningGame, reward1)
-            agent2.finalize(runningGame, reward2)
+            agent1.finalize(runningGame, reward1, game.getActions())
+            agent2.finalize(runningGame, reward2, game.getActions())
             runningGame = copy.deepcopy(game)
             player1Won += 1 if reward1 == 1 else 0
             gamesPlayed += 1
@@ -122,23 +122,4 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
         if drawGame:
             pygame.time.delay(100)
 
-
-
-
 learnVisual(width, height)
-
-"""
-startTime = time.time()
-outcomes = learn(agent1, agent2, numGames, 0.1, width, height)
-print("\nDone! - Played {0} games. Took {1}s. Won {2} games.".format(str(numGames), str(
-    round(time.time() - startTime, 2)), str(len([g for g in outcomes if g == 1]))))
-
-print(outcomes)
-
-p1Wins = []
-for i in range(len(outcomes)):
-    if outcomes[i] == 1:
-        p1Wins.append(i)
-
-print(p1Wins)
-"""
