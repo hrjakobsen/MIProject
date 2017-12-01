@@ -69,7 +69,7 @@ class QFunctionApproximator(object):
 
         self.batches += 1
 
-    def finalize(self, state, reward):
+    def finalize(self, state, reward, actions):
         self.updateBatch(state, reward, None)
 
 
