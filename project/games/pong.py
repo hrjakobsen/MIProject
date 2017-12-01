@@ -10,12 +10,13 @@ pongWidth = 100
 pongHeight= 50
 
 class PongGame(object):
-    def __init__(self, ballVelocity=None):
+    def __init__(self, ballVelocity=None, ballPosition=np.array([pongWidth // 2, pongHeight// 2])):
         self.width = pongWidth
         self.height = pongHeight
         self.p1pos = self.height // 2
         self.p2pos = self.height // 2
         self.actions = [NOTHING, UP, DOWN]
+        self.ballVelocity = ballVelocity
         if ballVelocity is None:
             direction = np.random.randint(180)
             if direction < 90:
@@ -26,7 +27,7 @@ class PongGame(object):
             dirRad = direction * math.pi / 180
             self.ballVelocity = np.array([math.cos(dirRad), math.sin(dirRad)])
 
-        self.ballPosition = np.array([self.width // 2, self.height // 2])
+        self.ballPosition = ballPosition
         self.ballRadius = 2.5
         self.paddleSpeed = 0.5
         self.paddleHeight = 20
