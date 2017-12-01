@@ -3,7 +3,7 @@ import numpy as np
 class QFunctionApproximator(object):
     def __init__(self, player, numFeatures, batchSize=100, gamma=1, decay=0.99, alpha=0.1):
         self.player = player
-        self.weights = np.ones(numFeatures) * 1
+        self.weights = np.ones(numFeatures) * -1
         self.s, self.a, self.r = None, None, None
         self.batch = []
         self.batches = 0
