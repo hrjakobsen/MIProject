@@ -236,26 +236,34 @@ def calculateFeatures(state, action, player):
         #nextState.ballPosition[1],
         #nextState.ballVelocity[0],
         #nextState.ballVelocity[1],
-        distanceToBall(nextState, player),
-        #getAngle(nextState, player)
+        #distanceToBall(nextState, player),
+        getAngle(nextState, player),
+        distanceFromCenter(nextState, player)
     ])
 
     return results
 
+def distanceFromCenter(s, player):
+    dist = abs(s.p1pos - s.height // 2) if player == 1 else abs(s.p2pos - s.height // 2)
+    return dist
+
 def getAngle(s, player):
+    #return 0 if the ball is not travelling in the direction of the player
+    #since the agent needs to minimize the angle
+    if (player == 1 and s.ballVelocity[0] > 0):
+        return 0
+    if (player == 2 and s.ballVelocity[0] < 0):
+        return 0
+
     vector = getVectorBetweenBallAndPaddle(s, player)
     lengthOfPaddleVec = math.sqrt(vector[0] * vector[0] + vector[1] * vector[1])
     dotProduct = np.dot(vector, s.ballVelocity)
     angle = math.acos(dotProduct / np.dot(lengthOfPaddleVec, 1))
     angle *= 180/math.pi
-    if angle > 170:
-        angle = 0
+
     return angle
 
 def getVectorBetweenBallAndPaddle(s, player):
-    #vector = np.array()
-    #if (player == 1):
-    #    vector = np.array([0 - s.ballPosition[0], s.p1pos - s.ballPosition[1]])
     vector = np.array([0 - s.ballPosition[0], s.p1pos - s.ballPosition[1]]) if player == 1 else np.asarray([200 - s.ballPosition[0], s.p2pos - s.ballPosition[1]])
     return vector
 
