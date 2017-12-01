@@ -1,4 +1,4 @@
-from games.HexagonGame import HexagonGame
+from games.hexagon import HexagonGame
 import math
 import numpy as np
 

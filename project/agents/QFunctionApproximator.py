@@ -3,7 +3,7 @@ import numpy as np
 class QFunctionApproximator(object):
     def __init__(self, player, numFeatures, batchSize=100, gamma=1, decay=0.99, alpha=0.1):
         self.player = player
-        self.weights = np.ones(numFeatures) * 1
+        self.weights = np.ones(numFeatures) * np.random.randint(-10, 10)
         self.s, self.a, self.r = None, None, None
         self.batch = []
         self.batches = 0
@@ -12,13 +12,13 @@ class QFunctionApproximator(object):
         self.mu = 0.999
         self.q = None
 
-        #Momentum
+        # Momentum
         self.velocity = np.zeros(numFeatures)
 
-        #Cache for Adagrad and RMSprop
+        # Cache for Adagrad and RMSprop
         self.g = np.zeros(numFeatures)
 
-        #RMSprop
+        # RMSprop
         self.decay = decay
         self.alpha = alpha
 
@@ -56,11 +56,15 @@ class QFunctionApproximator(object):
 
             for j in range(len(self.weights)):
                 gradient = gradients[j] / self.batchSize
-                self.g[j] = self.decay * self.g[j] + (1 - self.decay ) * gradient ** 2
-                #self.velocity[j] = self.mu * self.velocity[j] - gradient
+
+                self.g[j] = (self.decay * self.g[j]) + ((1 - self.decay) * gradient ** 2)
                 newWeights[j] -= self.alpha * gradient / (np.sqrt(self.g[j]) + 0.0000001)
+
+                # self.velocity[j] = self.mu * self.velocity[j] - gradient
+                # newWeights[j] += self.alpha * self.velocity[j]
+
+                # newWeights[j] -= self.alpha * gradient
             self.weights = newWeights
-            print(newWeights)
             self.batch = []
 
         self.batches += 1

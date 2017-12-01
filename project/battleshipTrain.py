@@ -1,15 +1,13 @@
 from games.battleshipSingle import BattleshipGame
 from agents.QFunctionApproximator import QFunctionApproximator
-from agents.RandomAgent import RandomAgent
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 import numpy as np
-import time
 
-np.set_printoptions(suppress=True, precision=20)
+np.set_printoptions(suppress=True, precision=8)
+
 
 def train(agent, numGames, epsilon, boardSize, ships):
-    rewards = []
     interval = numGames / 100
 
     for x in range(numGames):
@@ -19,11 +17,27 @@ def train(agent, numGames, epsilon, boardSize, ships):
             makeMove(agent, game, 1, epsilon)
 
         agent.finalize(game, game.getReward(1))
-        rewards.append(game.getReward(1))
-        #rewards.append(len(np.where(game.playerTwoBoard > 1)[0]))
 
         if x % interval == 0:
-            print("\rTrained %s/%s games" % (x, numGames), end="")
+            print("\rTrained %s/%s games %s" % (x, numGames, agent.weights), end="")
+    print()
+
+
+def play(agent, numGames, boardSize, ships):
+    rewards = []
+    interval = numGames / 100
+
+    for x in range(numGames):
+        game = BattleshipGame(boardSize, ships)
+
+        while not game.gameEnded():
+            game.makeMove(1, agent.getTrainedMove(game, game.getActions(1)))
+
+        rewards.append(game.getReward(1))
+
+        if x % interval == 0:
+            print("\rPlayed %s/%s games" % (x, numGames), end="")
+    print()
 
     return rewards
 
@@ -35,21 +49,30 @@ def makeMove(agent, game, player, epsilon):
         agent.s = None
     game.makeMove(player, action)
 
+
+numTrain = 1000
+trainBoardSize = 6
+trainShips = [2, 3, 4]
+
+numPlay = 100
+playBoardSize = trainBoardSize
+playShips = trainShips
+
+g = BattleshipGame(trainBoardSize, trainShips)
+agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.95, alpha=0.1)
+
 np.random.seed(0)
+outcomes = play(agent, numPlay, playBoardSize, playShips)
+moves = [sum(playShips) * 20 - outcome for outcome in outcomes]
+print("Average score: {0}/{1} ({2}) | Average moves: {3}/{4} ({5}) | Deviation: {6}".format(np.mean(outcomes), sum(playShips) * 19, round(np.mean(outcomes) / (sum(playShips) * 19), 2), np.mean(moves), sum(playShips), round(np.mean(moves) / sum(playShips), 2), np.std(outcomes)))
+#plt.plot(outcomes)
+#plt.show()
 
-numGames = 1000
-boardSize = 6
-ships = [5]#, 3, 4, 5]
+train(agent, numTrain, 0.1, trainBoardSize, trainShips)
 
-g = BattleshipGame(boardSize, ships)
-agent = QFunctionApproximator(1, g.getActions(1), g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.99, alpha=0.1)
-
-startTime = time.time()
-outcomes = train(agent, numGames, 0.1, boardSize, ships)
-
-print("\nDone! - Trained on {0} games. Took {1}s.".format(str(numGames), str(round(time.time() - startTime, 2))))
-
-print(outcomes)
-print(np.mean(outcomes))
-plt.plot(outcomes)
-plt.show()
+np.random.seed(0)
+outcomes = play(agent, numPlay, playBoardSize, playShips)
+moves = [sum(playShips) * 20 - outcome for outcome in outcomes]
+print("Average score: {0}/{1} ({2}) | Average moves: {3}/{4} ({5}) | Deviation: {6}".format(np.mean(outcomes), sum(playShips) * 19, round(np.mean(outcomes) / (sum(playShips) * 19), 2), np.mean(moves), sum(playShips), round(np.mean(moves) / sum(playShips), 2), np.std(outcomes)))
+#plt.plot(outcomes)
+#plt.show()
