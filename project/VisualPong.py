@@ -4,13 +4,14 @@ import time
 import math
 
 from agents.RandomAgent import RandomAgent
+from agents.GreedyPongAgent import GreedyPongAgent
 from agents.QFunctionApproximator import QFunctionApproximator
 from games.pong import PongGame, makeMove, pongWidth, pongHeight
 
 np.set_printoptions(suppress=True, precision=4  )
 np.random.seed(0)
 paddleDrawWidth = 4
-gameSizeModifier = 2
+gameSizeModifier = 4
 frame = 0
 
 def drawGame(surface, game: PongGame, p1wins, numgames, myfont):
@@ -47,9 +48,9 @@ def drawGame(surface, game: PongGame, p1wins, numgames, myfont):
 
 def drawTraining(surface, myfont, numgames):
     text = myfont.render("Training...", 1, (255, 0, 0))
-    surface.blit(text, (pongWidth * gameSizeModifier // 2, pongHeight * gameSizeModifier // 2))
+    surface.blit(text, (pongWidth * gameSizeModifier // 4, pongHeight * gameSizeModifier // 2))
     text = myfont.render("game {0}".format(str(numgames)), 1, (255, 0, 0))
-    surface.blit(text, (pongWidth * gameSizeModifier // 2, pongHeight * gameSizeModifier // 6))
+    surface.blit(text, (pongWidth * gameSizeModifier // 4, pongHeight * gameSizeModifier // 6))
 
 
 def getMove(agent, game: PongGame, player, epsilon):
@@ -76,8 +77,8 @@ def learnPong(epsilon):
     game = PongGame()
 
     features = game.getNumFeatures()
-    agent1 = QFunctionApproximator(1, features, gamma=1, batchSize=1000)
-    agent2 = RandomAgent()
+    agent1 = QFunctionApproximator(1, features, gamma=0.9, batchSize=1000, alpha=0.2)
+    agent2 = GreedyPongAgent(2)
 
     while isRunning:
         if displayGame:
@@ -111,10 +112,6 @@ def learnPong(epsilon):
             agent2.finalize(game, agent2Reward)
             p1Wins += 1 if agent1Reward > 0 else 0
             numGames += 1
-
-            print(agent1.weights)
-            print(len(agent1.batch))
-            print()
 
             game = PongGame()
 
