@@ -3,7 +3,6 @@ from agents.QFunctionApproximator import QFunctionApproximator
 from games.hexagon import HexagonGame
 from agents.TabularQLearner import TabularQLearner
 from agents.RandomAgent import RandomAgent
-from agents.hexagonBruteforce import HexagonBruteForce3
 
 import pygame
 import numpy as np
@@ -77,10 +76,8 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
 
     isRunning = True
 
-    agent1 = HexagonBruteForce3(game, 1) #GreedyHexAgent(1) #QFunctionApproximator(2, len(game.getFeatures(2)), game.getActions(), gamma=1, batchSize=100)#RandomAgent(g.getActions())
+    agent1 = GreedyHexAgent(1) #QFunctionApproximator(2, len(game.getFeatures(2)), game.getActions(), gamma=1, batchSize=100)#RandomAgent(g.getActions())
     agent2 = TabularQLearner({}, {}, 1)
-
-    agent1.save()
 
     playerTurn = 1
 
