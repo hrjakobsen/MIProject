@@ -4,7 +4,7 @@ from agents.QFunctionApproximator import QFunctionApproximator
 import numpy as np
 import time
 
-np.set_printoptions(suppress=True, precision=20)
+np.set_printoptions(suppress=True, precision=6)
 
 def train(agent, numGames, epsilon, boardSize, ships):
     rewards = []
@@ -41,17 +41,16 @@ def makeMove(agent, game, player, epsilon):
         agent.s = None
     game.makeMove(player, action)
 
-
-numTrainGames = 10
-numTestGames = 10
+numTrainGames = 2500
+numTestGames = 100
 boardSize = 5
 ships = [2, 3]
 
-alphas = [0.3, 0.1, 0.01]
-decays = [0.99, 0.9, 0.8]
-gammas = [1, 0.9, 0.8]
+alphas = [0.3, 0.5]
+decays = [0.9, 0.5]
+gammas = [0.9, 0.8]
 
-results = ["\nAlpha;Decay;Gamma;Score"]
+results = ["\nAlpha;Decay;Gamma;Weights;Score"]
 totalRuns = len(alphas) * len(decays) * len(gammas)
 run = 0
 
@@ -69,8 +68,8 @@ for alpha in alphas:
 
             outcomes = play(agent, numTestGames, boardSize, ships)
 
-            print("Run {0} of {1} completed. Took {2}s. ETA: {3}".format(str(run), str(totalRuns), round(time.time() - startTime, 2), (totalRuns - run) * round(time.time() - startTime, 2)))
-            results.append("{0};{1};{2};{3}".format(alpha, decay, gamma, np.mean(outcomes)))
+            print("Run {0} of {1} completed. Took {2}s. ETA: {3}".format(str(run), str(totalRuns), round(time.time() - startTime, 2), round((totalRuns - run) *( time.time() - startTime), 2)))
+            results.append("{0};{1};{2};{3};{4}".format(alpha, decay, gamma, agent.weights, np.mean(outcomes)))
 
 for res in results:
     print(res)

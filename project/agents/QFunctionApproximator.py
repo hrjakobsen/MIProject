@@ -1,16 +1,15 @@
 import numpy as np
 
 class QFunctionApproximator(object):
-    def __init__(self, player, actions, numFeatures, batchSize=100, gamma=1, decay=0.99, alpha=0.1):
+    def __init__(self, player, numFeatures, batchSize=100, gamma=1, decay=0.99, alpha=0.1):
         self.player = player
-        self.weights = np.ones(numFeatures) * 1
+        self.weights = np.ones(numFeatures) * -1
         self.s, self.a, self.r = None, None, None
         self.batch = []
         self.batches = 0
         self.batchSize = batchSize
         self.gamma = gamma
         self.mu = 0.999
-        self.actions = actions
         self.q = None
 
         #Momentum
@@ -24,12 +23,10 @@ class QFunctionApproximator(object):
         self.alpha = alpha
 
     def Q(self, state, action):
-        #q = np.sum(np.dot(state.calculateFeatures(state, action, self.player), self.weights))
-        #self.q = q
         return np.sum(np.dot(state.calculateFeatures(state, action, self.player), self.weights))
 
     def getMove(self, state, reward, actions):
-        self.updateBatch(state, reward)
+        self.updateBatch(state, reward, actions)
 
         a = actions[argmax([self.Q(state, aP) for aP in actions])]
 
@@ -41,10 +38,13 @@ class QFunctionApproximator(object):
     def getTrainedMove(self, state, actions):
         return actions[argmax([self.Q(state, aP) for aP in actions])]
 
-    def updateBatch(self, state, reward):
+    def updateBatch(self, state, reward, actions):
         if self.s is not None:
-            # This is the q that Q would become if we were not using the function approximation method but instead used the tabular method. -Tessa
-            q = (1 - self.alpha) * self.Q(self.s, self.a) + self.alpha * (reward + self.gamma * max([self.Q(state, aP) for aP in self.actions]))
+            if actions is None:
+                q = (1 - self.alpha) * self.Q(self.s, self.a) + self.alpha * reward
+            else:
+                q = (1 - self.alpha) * self.Q(self.s, self.a) + self.alpha * (reward + self.gamma * max([self.Q(state, aP) for aP in actions]))
+
             self.batch.append((self.s, self.a, q))
 
         if len(self.batch) == self.batchSize:
@@ -60,13 +60,13 @@ class QFunctionApproximator(object):
                 #self.velocity[j] = self.mu * self.velocity[j] - gradient
                 newWeights[j] -= self.alpha * gradient / (np.sqrt(self.g[j]) + 0.0000001)
             self.weights = newWeights
-            #print(newWeights)
+            print(newWeights)
             self.batch = []
 
         self.batches += 1
 
     def finalize(self, state, reward):
-        self.updateBatch(state, reward)
+        self.updateBatch(state, reward, None)
 
 
 def argmax(l):

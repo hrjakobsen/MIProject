@@ -41,7 +41,7 @@ class PongGame(object):
         new.ballPosition = self.ballPosition
         return new
 
-    def getActions(self):
+    def getActions(self, player):
         return self.actions
 
     def gameEnded(self):
@@ -237,10 +237,28 @@ def calculateFeatures(state, action, player):
         #nextState.ballPosition[1],
         #nextState.ballVelocity[0],
         #nextState.ballVelocity[1],
-        distanceToBall(nextState, player)
+        distanceToBall(nextState, player),
+        #getAngle(nextState, player)
     ])
 
     return results
+
+def getAngle(s, player):
+    vector = getVectorBetweenBallAndPaddle(s, player)
+    lengthOfPaddleVec = math.sqrt(vector[0] * vector[0] + vector[1] * vector[1])
+    dotProduct = np.dot(vector, s.ballVelocity)
+    angle = math.acos(dotProduct / np.dot(lengthOfPaddleVec, 1))
+    angle *= 180/math.pi
+    if angle > 170:
+        angle = 0
+    return angle
+
+def getVectorBetweenBallAndPaddle(s, player):
+    #vector = np.array()
+    #if (player == 1):
+    #    vector = np.array([0 - s.ballPosition[0], s.p1pos - s.ballPosition[1]])
+    vector = np.array([0 - s.ballPosition[0], s.p1pos - s.ballPosition[1]]) if player == 1 else np.asarray([200 - s.ballPosition[0], s.p2pos - s.ballPosition[1]])
+    return vector
 
 def distanceToBall(s, player):
     paddleY = s.p1pos if player == 1 else s.p2pos
