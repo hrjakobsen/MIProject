@@ -77,14 +77,14 @@ def learnVisual(agent, numGames, boardSize, ships, epsilon):
                 drawBattleship(game, surface)
                 pygame.display.flip()
 
-        agent.finalize(game, game.getReward(1), action)
+        agent.finalize(game, game.getReward(1), game.getActions(1))
 
 numTrain = 1000
 trainBoardSize = 6
 trainShips = [2, 3]
 
 g = BattleshipGame(trainBoardSize, trainShips)
-agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.95, alpha=0.1)
+agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.95, alpha=0.1, weightMultiplier=1)
 
 np.random.seed(0)
 
