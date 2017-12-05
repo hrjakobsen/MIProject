@@ -4,7 +4,7 @@ class GreedyPongAgent(object):
     def __init__(self, player):
         self.player = player
 
-    def finalize(self, state, reward):
+    def finalize(self, state, reward, actions):
         pass
 
     def getMove(self, state: PongGame, reward, actions):

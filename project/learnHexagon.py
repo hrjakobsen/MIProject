@@ -5,7 +5,6 @@ from agents.RandomAgent import RandomAgent
 from agents.GreedyHexAgent import GreedyHexAgent
 
 import numpy as np
-import matplotlib.pyplot as plt
 import time
 import copy
 
@@ -33,8 +32,8 @@ def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
 
             makeMove(agent2, game, 2, epsilon)
 
-        agent1.finalize(game, game.getReward(1))
-        agent2.finalize(game, game.getReward(2))
+        agent1.finalize(game, game.getReward(1), game.getActions())
+        agent2.finalize(game, game.getReward(2), game.getActions())
         
         p2Start = not p2Start
         #p1Wins += 1 if game.getReward(1) == 1 else 0
@@ -47,7 +46,7 @@ def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
 
 
 def makeMove(agent, game, player, epsilon):
-    action = agent.getMove(game, game.getReward(player))
+    action = agent.getMove(game, game.getReward(player), game.getActions())
     if np.random.rand() < epsilon:
         action = g.getActions()[np.random.randint(5)]
         agent.s = None
@@ -63,7 +62,7 @@ height = 3
 
 g = HexagonGame(width, height)
 agent1 = TabularQLearner.load(1)#TabularQLearner(g.getActions(), {}, {}, 1)
-agent2 = RandomAgent(g.getActions())
+agent2 = RandomAgent()
 
 startTime = time.time()
 outcomes = learn(agent1, agent2, numGames, 0.5, width, height)

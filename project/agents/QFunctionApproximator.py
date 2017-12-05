@@ -1,9 +1,9 @@
 import numpy as np
 
 class QFunctionApproximator(object):
-    def __init__(self, player, numFeatures, batchSize=100, gamma=1, decay=0.99, alpha=0.1):
+    def __init__(self, player, numFeatures, batchSize=100, gamma=1, decay=0.99, alpha=0.1, weightMultiplier=np.random.randint(-10, 10)):
         self.player = player
-        self.weights = np.ones(numFeatures) * np.random.randint(-10, 10)
+        self.weights = np.ones(numFeatures) * weightMultiplier
         self.s, self.a, self.r = None, None, None
         self.batch = []
         self.batches = 0
@@ -66,6 +66,7 @@ class QFunctionApproximator(object):
                 # newWeights[j] -= self.alpha * gradient
             self.weights = newWeights
             self.batch = []
+            print(self.weights)
 
         self.batches += 1
 
