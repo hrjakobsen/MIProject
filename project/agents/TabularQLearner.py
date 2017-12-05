@@ -84,17 +84,17 @@ class TabularQLearner(object):
         :return:
         """
         s = self.s.hash()
-        sPh = sP.hash()
+        sP = sP.hash()
         a = self.a
         self.Q[s, a] = self.Q.get((s, a), 0) + self._alpha() * (
-            self.r + self.gamma * (max([self.Q.get((sPh, aP), 0) for aP in actions]) - self.Q.get((s, a), 0)))
+            self.r + self.gamma * (max([self.Q.get((sP, aP), 0) for aP in actions]) - self.Q.get((s, a), 0)))
 
     def _alpha(self):
         """
         The learning rate parameter is decreasing over time
         :return: the current learning rate parameter for the last state and action
         """
-        return 1#100 / (10000 + self.N.get((self.s.hash(), self.a), 0))
+        return 1 / (100 + self.N.get((self.s.hash(), self.a), 0))
 
     def finalize(self, state, reward, actions):
         if self.s is None:

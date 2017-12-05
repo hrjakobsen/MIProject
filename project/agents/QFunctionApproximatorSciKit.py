@@ -5,19 +5,25 @@ from sklearn.metrics import mean_squared_error, r2_score
 class QFunctionApproximatorSciKit(object):
     def __init__(self, player, numFeatures, batchSize=100, gamma=1, decay=0.99, alpha=0.1):
         self.player = player
-        #self.weights = np.ones(numFeatures) * np.random.randint(-10, 10)
         self.s, self.a, self.r = None, None, None
+        self.weights = []
         self.batch = []
         self.batches = 0
         self.batchSize = batchSize
         self.gamma = gamma
         self.regr = linear_model.LinearRegression()
-        self.regr.fit(np.ones(numFeatures), np.zeros(numFeatures))
+        X = np.array([np.ones(numFeatures) for i in range(batchSize)])
+        Y = np.zeros(batchSize)
+        print(X)
+        print(Y)
+        self.regr.fit(X, Y)
 
         self.alpha = alpha
 
     def Q(self, state, action):
-        return self.regr.predict(state.calculateFeatures(state, action, self.player))
+        features = np.array(state.calculateFeatures(state, action, self.player))
+        #print(self.regr.predict(np.array([features])))
+        return self.regr.predict(np.array([features]))[0]
 
     def getMove(self, state, reward, actions):
         self.updateBatch(state, reward, actions)
@@ -39,16 +45,17 @@ class QFunctionApproximatorSciKit(object):
             else:
                 q = (1 - self.alpha) * self.Q(self.s, self.a) + self.alpha * (reward + self.gamma * max([self.Q(state, aP) for aP in actions]))
 
-            self.batch.append((self.s, self.a, q))
+            self.batch.append([np.array(state.calculateFeatures(self.s, self.a, self.player)), q])
 
         if len(self.batch) == self.batchSize:
-            self.regr.fit([self.Q(data[0], data[1]) for data in self.batch], self.batch[2])
-            #self.weights = self.regr.coef_
-            print(self.regr.coef_)
+            X = np.array([b[0] for b in self.batch])
+            Y = np.array([b[1] for b in self.batch])
 
-        self.batches += 1
+            self.regr.fit(X, Y)
+            self.weights = self.regr.coef_
+            self.batches = []
 
-    def finalize(self, state, reward):
+    def finalize(self, state, reward, actions):
         self.updateBatch(state, reward, None)
 
 def argmax(l):

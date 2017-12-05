@@ -1,5 +1,7 @@
 from games.battleshipSingle import BattleshipGame
 from agents.QFunctionApproximator import QFunctionApproximator
+from agents.QFunctionApproximatorSciKit import QFunctionApproximatorSciKit
+from agents.NeuralNetworkAgent import NeuralNetworkAgent
 #import matplotlib.pyplot as plt
 
 import numpy as np
@@ -16,7 +18,7 @@ def train(agent, numGames, epsilon, boardSize, ships):
         while not game.gameEnded():
             makeMove(agent, game, 1, epsilon)
 
-        agent.finalize(game, game.getReward(1), game.getActions())
+        agent.finalize(game, game.getReward(1), None)
 
         if x % interval == 0:
             print("\rTrained %s/%s games %s" % (x, numGames, agent.weights), end="")
@@ -50,7 +52,7 @@ def makeMove(agent, game, player, epsilon):
     game.makeMove(player, action)
 
 
-numTrain = 1000
+numTrain = 5000
 trainBoardSize = 6
 trainShips = [2, 3, 4]
 
@@ -59,7 +61,9 @@ playBoardSize = trainBoardSize
 playShips = trainShips
 
 g = BattleshipGame(trainBoardSize, trainShips)
-agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.95, alpha=0.1)
+#agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=10000, gamma=0.9, decay=0.95, alpha=0.1)
+#agent = QFunctionApproximatorSciKit(1, g.getNumFeatures(), batchSize=5, gamma=0.9)
+agent = NeuralNetworkAgent(1, g.getNumFeatures(), batchSize=1000, gamma=0.9)
 
 np.random.seed(0)
 outcomes = play(agent, numPlay, playBoardSize, playShips)

@@ -7,10 +7,11 @@ WATERHIT = 2
 SHIPHIT = 3
 
 class BattleshipGame(object):
-    def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5], board=None):
+    def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
         self.boardSize = boardSize
         self.actions = None
-        self.board, self.ships = randomBoard(boardSize, ships) if board is None else board
+        self.ships = ships
+        self.board, self.shipStatus = randomBoard(boardSize, ships)
         self.hits = []
         self.numHits = 0
         self.misses = []
@@ -29,6 +30,9 @@ class BattleshipGame(object):
     def gameEnded(self):
         return not np.any(self.board == SHIP)
 
+    def getFeatures(self, player):
+        return getFeatures(player)
+
     def getNumFeatures(self):
         if self.numFeatures is None:
             self.numFeatures = len(calculateFeatures(self, (0, 0), 1))
@@ -41,17 +45,17 @@ class BattleshipGame(object):
     def getReward(self, player):
         if self.gameEnded():
             numMoves = len(np.where(self.board > 1)[0])
-            return (self.numHits * 20) - numMoves
+            return (self.numHits * 20) - (numMoves * 5)
 
         return 0
 
     def __deepcopy__(self, _):
-        new = BattleshipGame(self.boardSize, [], self.board)
-        new.actions = self.actions
-        new.ships = self.ships
-        new.hits = self.hits
+        new = BattleshipGame(self.boardSize, self.ships)
+        new.board = self.board.copy()
+        new.shipStatus = self.shipStatus.copy()
+        new.hits = self.hits.copy()
         new.numHits = self.numHits
-        new.misses = self.misses
+        new.misses = self.misses.copy()
         new.numFeatures = self.numFeatures
         return new
 
@@ -66,7 +70,7 @@ class BattleshipGame(object):
             self.numHits += 1
             self.hits.append(action)
 
-            for ship in self.ships:
+            for ship in self.shipStatus:
                 if (action, True) in ship:
                     ship[ship.index((action, True))] = (action, False)
                     shipSunk = True
@@ -123,6 +127,15 @@ def randomBoard(boardSize, ships):
 
     return board, shipsList
 
+def getFeatures(player):
+    return [
+        lambda state, action: 1,
+        lambda state, action: distanceToHit(state, action, player),
+        lambda state, action: distanceToMiss(state, action, player),
+        lambda state, action:hitsOnALine(state, action, player)
+    ]
+
+
 def calculateFeatures(state, action, player):
     results = np.array([
         1,
@@ -141,6 +154,7 @@ def distanceToHit(state, action, player):
         if tempDist < minDist:
             minDist = tempDist
 
+    return (minDist - 1) / (state.boardSize * 2 - 1)
     return minDist
 
 def distanceToMiss(state, action, player):
@@ -151,19 +165,13 @@ def distanceToMiss(state, action, player):
         if tempDist < minDist:
             minDist = tempDist
 
+    return (minDist - 1) / (state.boardSize * 2 - 1)
     return minDist
 
 def hitsOnALine(state, action, player):
-    #Is this action on a line, looking at previous hits?
-
-    #print("---")
-    #print(action)
-    #print(state.hits)
-
     if len(state.hits) >= 2:
         for hit in state.hits:
             for otherHit in state.hits:
-                #print("Checking {0} against {1}".format(hit, otherHit))
                 dRow = hit[0] - otherHit[0]
                 dCol = hit[1] - otherHit[1]
 
@@ -176,15 +184,8 @@ def hitsOnALine(state, action, player):
                 else:
                     continue
 
-                #print("New actions:")
-                #print(newAction1)
-                #print(newAction2)
                 if newAction1 == action or newAction2 == action:
-                    #print(1)
-                    #print("---")
                     return 1
 
-    #print(0)
-    #print("---")
     return 0
 

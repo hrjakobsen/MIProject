@@ -3,15 +3,15 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation
 
 class NeuralNetworkAgent(object):
-    def __init__(self, player, numFeatures, actions, batchSize=1, gamma=1):
+    def __init__(self, player, numFeatures, batchSize=1, gamma=1, alpha=0.1):
         self.player = player
         self.weights = np.ones(numFeatures) * 0.5
         self.s, self.a, self.r = None, None, None
-        self.actions = actions
         self.batch = []
         self.batches = 0
         self.batchSize = batchSize
         self.gamma = gamma
+        self.alpha = alpha
         self.model = Sequential([
             Dense(100, input_dim=numFeatures),
             Activation('relu'),
@@ -27,20 +27,26 @@ class NeuralNetworkAgent(object):
         prediction = self.model.predict(np.array([features]))[0]
         return prediction[0]
 
-    def getMove(self, state, reward):
-        self.updateBatch(state, reward)
+    def getMove(self, state, reward, actions):
+        self.updateBatch(state, reward, actions)
 
-        a = self.actions[argmax([self.Q(state, aP) for aP in self.actions])]
+        a = actions[argmax([self.Q(state, aP) for aP in actions])]
 
         self.s = state
         self.a = a
 
         return self.a
 
-    def updateBatch(self, state, reward):
+    def getTrainedMove(self, state, actions):
+        return actions[argmax([self.Q(state, aP) for aP in actions])]
+
+    def updateBatch(self, state, reward, actions):
         if self.s is not None:
-            # This is the q that Q would become if we were not using the function approximation method but instead used the tabular method. -Tessa
-            q = (1 - self.alpha()) * self.Q(self.s, self.a) + self.alpha() * (reward + self.gamma * max([self.Q(state, aP) for aP in self.actions]))
+            if actions is None:
+                q = (1 - self.alpha) * self.Q(self.s, self.a) + self.alpha * reward
+            else:
+                q = (1 - self.alpha) * self.Q(self.s, self.a) + self.alpha * (reward + self.gamma * max([self.Q(state, aP) for aP in actions]))
+
             self.batch.append([np.asarray([feature(self.s, self.a) for feature in state.getFeatures(self.player)]), q])
 
         if len(self.batch) == self.batchSize:
@@ -53,11 +59,9 @@ class NeuralNetworkAgent(object):
 
         self.batches += 1
 
-    def finalize(self, state, reward):
-        self.updateBatch(state, reward)
+    def finalize(self, state, reward, actions):
+        self.updateBatch(state, reward, None)
 
-    def alpha(self):
-        return 0.005
 
 def argmax(l):
     return l.index(max(l))
