@@ -7,15 +7,13 @@ import pickle
 
 import numpy as np
 import matplotlib.pyplot as plt
-import time
 import copy
+
 
 def loadFromFile(fileName):
     with open(fileName, 'rb') as handle:
         return pickle.load(handle)
 
-realQs = loadFromFile("Bruteforce.txt")
-errors = []
 
 def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
     p2Start = False
@@ -23,14 +21,9 @@ def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
     interval = numGames / 100
 
     startGame = HexagonGame(width, height)
-    startGame.board = np.array([ np.array([5, -1, 3, -1, 3]), np.array([2, 4, 0, 0, 4]), np.array([2, 1, 0, 1, 1]), np.array([0, 1, 4, 3, 0]), np.array([3, 0, 2, 3, 0]), np.array([1, 3, 3, 3, 10])])
-    startGame._hash = getHash(startGame.board)
-
-    print(startGame.board)
 
     for x in range(numGames):
         game = copy.deepcopy(startGame)
-        # game = HexagonGame(width, height)
 
         if p2Start:
             makeMove(agent2, game, 2, epsilon)
@@ -59,6 +52,7 @@ def makeMove(agent, game, player, epsilon):
 
     if agent == agent1:
         errors.append((agent.Q.get((game.hash(), action), 0) - realQs[game.hash(), action]) ** 2)
+        #errors.append((agent.Q(game, action) - realQs[game.hash(), action]) ** 2)
 
     if np.random.rand() < epsilon:
         action = actions[np.random.randint(len(actions))]
@@ -67,21 +61,32 @@ def makeMove(agent, game, player, epsilon):
 
 
 np.set_printoptions(suppress=True, precision=2)
-np.random.seed(0)
 
 numGames = 1000
 width = 5
 height = 5
 
+realQs = loadFromFile("realQ_{0}x{1}".format(width, height))
+errors = []
+
 g = HexagonGame(width, height)
-agent1 = TabularQLearner(realQs, {}, 1)
+#agent1 = QFunctionApproximator(1, len(g.calculateFeatures(g, 0, 1)), batchSize=1000, gamma=1, decay=0.99, alpha=0.1)
+agent1 = TabularQLearner({}, {}, 1)
 agent2 = GreedyHexAgent(2)
 
+np.random.seed(2)
 learn(agent1, agent2, numGames, 0.1, width, height)
 
-print()
-print(len(errors))
-print(errors)
+
+
+runningMeanNumber = 100
+numDataPoints = 100
+
+errors = np.convolve(errors, np.ones((runningMeanNumber,))/runningMeanNumber, mode='valid')
+count = 0
+for x in range(0, len(errors), (len(errors)//numDataPoints)):
+    print("{0} {1}".format(count, errors[x]))
+    count += 1
 
 plt.scatter(range(len(errors)), errors)
 plt.show()

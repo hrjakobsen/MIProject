@@ -106,6 +106,8 @@ class Node(object):
 
 class HexagonBruteforce(object):
     def __init__(self, state: HexagonGame, player, gamma=1):
+        self.width = state.width
+        self.height = state.height
         states, terminal = generateStates(state)
         self.nodes = {}
         for s in states + terminal:
@@ -164,9 +166,7 @@ class HexagonBruteforce(object):
         pass  # game = HexagonGame(3, 3)
 
     def save(self):
-        fileName = "Bruteforce.txt"
+        fileName = "realQ_{0}x{1}".format(str(self.width), str(self.height))
         import pickle
         with open(fileName, 'wb') as handle:
             pickle.dump(self.Q, handle, protocol=pickle.HIGHEST_PROTOCOL)
-# q = HexagonBruteForce2(game, 1)  # generateStates(game)
-# q.getMove(game, 0)
