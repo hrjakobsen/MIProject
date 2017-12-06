@@ -1,12 +1,13 @@
 from games.battleshipSingle import BattleshipGame
 from agents.QFunctionApproximator import QFunctionApproximator
-from agents.HuntAndSeekAgent import HuntAndSeekAgent
+from agents.HuntAndTargetAgent import HuntAndTargetAgent
+from agents.RandomAgent import RandomAgent
 
 import pygame
 import numpy as np
 import copy
 
-gameSizeModifier = 100
+gameSizeModifier = 80
 
 def makeMove(agent, game, epsilon):
     actions = game.getActions(1)
@@ -16,6 +17,9 @@ def makeMove(agent, game, epsilon):
         agent.s = None
     game.makeMove(1, action)
 
+def makeTrainedMove(agent, game):
+    actions = game.getActions(1)
+    game.makeMove(1, agent.getTrainedMove(game, actions))
 
 def drawBattleship(game: BattleshipGame, surface):
     for row in range(game.boardSize):
@@ -40,7 +44,26 @@ def drawCell(surface, y, x, content):
         pygame.draw.circle(surface, (255, 0, 0), (int(x * gameSizeModifier + gameSizeModifier // 2), int(y * gameSizeModifier + gameSizeModifier // 2)), (gameSizeModifier // 10))
 
 
-def learnVisual(agent, numGames, boardSize, ships, epsilon):
+def trainAgent(agent, numGames, boardSize, ships, epsilon):
+    i = 0
+    StartGame = BattleshipGame(boardSize, ships)
+    for x in range(numGames):
+        #print(agent.weights)
+        if i < 20:
+            game = copy.deepcopy(StartGame)
+        else:
+            game = BattleshipGame(boardSize, ships)
+            #print(agent.weights)
+            i = 0
+
+        while not game.gameEnded():
+            makeMove(agent, game, epsilon)
+        agent.finalize(game, game.getReward(1), game.getActions(1))
+        i += 1
+        print("Remaining games: ", numGames-x, agent.weights)
+
+
+def learnVisual(agents, numGames, boardSize, ships, epsilon):
     pygame.init()
 
     drawHeight = boardSize * gameSizeModifier
@@ -49,53 +72,76 @@ def learnVisual(agent, numGames, boardSize, ships, epsilon):
 
     surface = pygame.display.get_surface()
     drawGame = True
+    funcApproxWins = 0
+    numOfDraws = 0
 
-    startGame = BattleshipGame(boardSize, ships)
+    #startGame = BattleshipGame(boardSize, ships)
 
     for x in range(numGames):
-        pygame.display.set_caption("Game {0} - {1}".format(x, agent.weights if isinstance(agent, QFunctionApproximator) else []))
-        if x % 100 == 99:
-            startGame = BattleshipGame(boardSize, ships)
+        startGame = BattleshipGame(boardSize, ships)
+        playerMoves = [0, 0]
+        playerIndex = 0
+        for agent in agents:
+            numMoves = 0
+            pygame.display.set_caption("Game {0} - {1}".format(x, agent.weights if isinstance(agent, QFunctionApproximator) else []))
+            #if x % 100 == 99:
+            #    startGame = BattleshipGame(boardSize, ships)
 
-        game = copy.deepcopy(startGame)
-        #game = BattleshipGame(boardSize, ships)
+            game = copy.deepcopy(startGame)
+            #game = BattleshipGame(boardSize, ships)
 
-        if drawGame:
-            surface.fill((200, 200, 200))
-            drawBattleship(game, surface)
-            pygame.display.flip()
+            while not game.gameEnded():
+                makeTrainedMove(agent, game)
+                numMoves += 1
 
-        while not game.gameEnded():
-            makeMove(agent, game, epsilon)
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    return
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_q:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
                         return
-                    elif event.key == pygame.K_p:
-                        drawGame = not drawGame
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_q:
+                            return
+                        elif event.key == pygame.K_p:
+                            drawGame = not drawGame
 
-            if drawGame:
-                pygame.time.delay(1000)
+                if drawGame:
+                    pygame.time.delay(1000)
 
-            if drawGame:
-                surface.fill((200, 200, 200))
-                drawBattleship(game, surface)
-                pygame.display.flip()
+                if drawGame:
+                    surface.fill((200, 200, 200))
+                    drawBattleship(game, surface)
+                    pygame.display.flip()
 
-        agent.finalize(game, game.getReward(1), game.getActions(1))
+            playerMoves[playerIndex] = numMoves
+            playerIndex += 1
+            agent.finalize(game, game.getReward(1), game.getActions(1))
+        if playerMoves[0] < playerMoves[1]:
+            funcApproxWins += 1
+        if playerMoves[0] == playerMoves[1]:
+            numOfDraws += 1
 
-numTrain = 100000
+    print("func wins: ", funcApproxWins)
+    print("num of draws: ", numOfDraws)
+
+
+
+numTrain = 1000
 trainBoardSize = 10
 trainShips = [2, 3, 3, 4, 5]
 
 g = BattleshipGame(trainBoardSize, trainShips)
 #agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.98, alpha=0.1, minWeight=-1, maxWeight=1)
-agent = HuntAndSeekAgent(trainBoardSize)
+agent1 = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.98, alpha=0.3, minWeight=-1, maxWeight=1)
+agent2 = HuntAndTargetAgent(trainBoardSize)
+agent2 = RandomAgent()
+
+agents = [agent1, agent2]
 
 np.random.seed(1)
 
-learnVisual(agent, numTrain, trainBoardSize, trainShips, 0)
+#trainAgent(agent1, numTrain, trainBoardSize, trainShips, 0.1)
+
+agents[0].weights[1] = -4
+agents[0].weights[2] = 2
+agents[0].weights[3] = 2
+learnVisual(agents, numTrain, trainBoardSize, trainShips, 0)
 
