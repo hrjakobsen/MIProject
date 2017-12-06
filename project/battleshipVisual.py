@@ -5,7 +5,7 @@ import pygame
 import numpy as np
 import copy
 
-gameSizeModifier = 150
+gameSizeModifier = 100
 
 def makeMove(agent, game, epsilon):
     actions = game.getActions(1)
@@ -49,8 +49,15 @@ def learnVisual(agent, numGames, boardSize, ships, epsilon):
     surface = pygame.display.get_surface()
     drawGame = True
 
+    startGame = BattleshipGame(boardSize, ships)
+
     for x in range(numGames):
-        game = BattleshipGame(boardSize, ships)
+        pygame.display.set_caption("Game {0} - {1}".format(x, agent.weights))
+        if x % 100 == 99:
+            startGame = BattleshipGame(boardSize, ships)
+
+        game = copy.deepcopy(startGame)
+        #game = BattleshipGame(boardSize, ships)
 
         if drawGame:
             surface.fill((200, 200, 200))
@@ -79,14 +86,14 @@ def learnVisual(agent, numGames, boardSize, ships, epsilon):
 
         agent.finalize(game, game.getReward(1), game.getActions(1))
 
-numTrain = 1000
-trainBoardSize = 6
-trainShips = [2, 3]
+numTrain = 100000
+trainBoardSize = 10
+trainShips = [2, 3, 3, 4, 5]
 
 g = BattleshipGame(trainBoardSize, trainShips)
-agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.95, alpha=0.1, weightMultiplier=1)
+agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.98, alpha=0.1, minWeight=-1, maxWeight=1)
 
-np.random.seed(0)
+np.random.seed(1)
 
 learnVisual(agent, numTrain, trainBoardSize, trainShips, 0)
 

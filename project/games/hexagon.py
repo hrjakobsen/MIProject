@@ -289,6 +289,9 @@ class HexagonGame(object):
         new._features = self._features
         return new
 
+    def getNumFeatures(self):
+        return len(self.calculateFeatures(self, 0, 1))
+
     def calculateFeatures(self, state, action, player):
         features = self.getFeatures1(player)
         results = [feature(state, action) for feature in features]

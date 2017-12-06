@@ -11,7 +11,6 @@ import time
 
 gameSizeModifier = 150
 
-
 def makeMove(agent, game, player, epsilon):
     action = agent.getMove(game, game.getReward(player), game.getActions())
     if np.random.rand() < epsilon:
@@ -25,8 +24,8 @@ np.random.seed(0)
 g = HexagonGame(1, 1)
 
 numGames = 1
-width = 5
-height = 5
+width = 3
+height = 3
 
 def drawHexagon(game: HexagonGame, surface):
     for x in range(game.width):
