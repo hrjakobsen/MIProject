@@ -13,14 +13,12 @@ class HuntAndSeekAgent(object):
         :param actions: the actions to choose from
         :return: the action to play in this state
         """
-        #print(state.hits)
         for hit in state.hits:
             for otherHit in state.hits:
                 action = None
                 if hit == otherHit:
                     continue
 
-                print(hit, otherHit)
                 #we check for horizontally placed battleship
                 if otherHit == (hit[0]-1, hit[1]):
                     if otherHit[0] == 0:
@@ -47,7 +45,6 @@ class HuntAndSeekAgent(object):
 
                 for availableAction in actions:
                     if action == availableAction:
-                        print(action, hit, otherHit)
                         return action
 
         #if we don't have two hits next to each other, check if we at least got 1 hit, then shoot next to it

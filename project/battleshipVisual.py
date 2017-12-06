@@ -1,5 +1,6 @@
 from games.battleshipSingle import BattleshipGame
 from agents.QFunctionApproximator import QFunctionApproximator
+from agents.HuntAndSeekAgent import HuntAndSeekAgent
 
 import pygame
 import numpy as np
@@ -52,7 +53,7 @@ def learnVisual(agent, numGames, boardSize, ships, epsilon):
     startGame = BattleshipGame(boardSize, ships)
 
     for x in range(numGames):
-        pygame.display.set_caption("Game {0} - {1}".format(x, agent.weights))
+        pygame.display.set_caption("Game {0} - {1}".format(x, agent.weights if isinstance(agent, QFunctionApproximator) else []))
         if x % 100 == 99:
             startGame = BattleshipGame(boardSize, ships)
 
@@ -77,7 +78,7 @@ def learnVisual(agent, numGames, boardSize, ships, epsilon):
                         drawGame = not drawGame
 
             if drawGame:
-                pygame.time.delay(100)
+                pygame.time.delay(1000)
 
             if drawGame:
                 surface.fill((200, 200, 200))
@@ -91,7 +92,8 @@ trainBoardSize = 10
 trainShips = [2, 3, 3, 4, 5]
 
 g = BattleshipGame(trainBoardSize, trainShips)
-agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.98, alpha=0.1, minWeight=-1, maxWeight=1)
+#agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.98, alpha=0.1, minWeight=-1, maxWeight=1)
+agent = HuntAndSeekAgent(trainBoardSize)
 
 np.random.seed(1)
 

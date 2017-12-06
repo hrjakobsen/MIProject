@@ -19,6 +19,10 @@ def makeMove(agent, game, player, epsilon):
     game.makeMove(player, action)
 
 
+def makeMove2(agent, game, player):
+    action = agent.getTrainedMove(game, game.getActions())
+    game.makeMove(player,action)
+
 np.set_printoptions(suppress=True, precision=2)
 np.random.seed(0)
 g = HexagonGame(1, 1)
@@ -75,8 +79,8 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
 
     isRunning = True
 
-    agent1 = GreedyHexAgent(1) #QFunctionApproximator(2, len(game.getFeatures(2)), game.getActions(), gamma=1, batchSize=100)#RandomAgent(g.getActions())
-    agent2 = TabularQLearner({}, {}, 1)
+    agent1 = QFunctionApproximator(1, len(game.calculateFeatures(game, 0, 1)), batchSize=100, minWeight=5, maxWeight=5)#QFunctionApproximator(1, len(game.getFeatures(1)), game.getActions(), weightMultiplier=5)
+    agent2 = RandomAgent()#TabularQLearner({}, {}, 1)
 
     playerTurn = 1
 
@@ -90,7 +94,10 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
             surface.fill((200, 200, 200))
             drawHexagon(runningGame, surface)
 
-        makeMove(agent1 if playerTurn == 1 else agent2, runningGame, playerTurn, epsilon)
+        if gamesPlayed < 1000:
+            makeMove(agent1 if playerTurn == 1 else agent2, runningGame, playerTurn, epsilon)
+        else:
+            makeMove2(agent1 if playerTurn == 1 else agent2, runningGame, playerTurn)
 
         if runningGame.gameEnded():
             reward1 = runningGame.getReward(1)
@@ -98,10 +105,13 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
 
             agent1.finalize(runningGame, reward1, game.getActions())
             agent2.finalize(runningGame, reward2, game.getActions())
-            runningGame = copy.deepcopy(game)
+            runningGame = HexagonGame(gameWidth,gameHeight)
             player1Won += 1 if reward1 == 1 else 0
             gamesPlayed += 1
             pygame.display.set_caption("player 1 won {0}, out of {1} games".format(player1Won, gamesPlayed))
+            #if gamesPlayed == 1000 or gamesPlayed == 2000:
+            #    player1Won = 0
+            #    time.sleep(5)
 
         playerTurn = 2 if playerTurn == 1 else 1
 

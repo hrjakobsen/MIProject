@@ -293,11 +293,11 @@ class HexagonGame(object):
         return len(self.calculateFeatures(self, 0, 1))
 
     def calculateFeatures(self, state, action, player):
-        features = self.getFeatures1(player)
-        results = [feature(state, action) for feature in features]
+        features = self.getFeatures(player)
+        results = np.array([feature(state, action) for feature in features])
         return results
 
-    def getFeatures(self, player):
+    def getFeaturesOld(self, player):
         if self._features is not None:
             return self._features
 
@@ -330,7 +330,7 @@ class HexagonGame(object):
 
         return self._features
 
-    def getFeatures1(self, player):
+    def getFeatures(self, player):
         if self._features is not None:
             return self._features
 

@@ -66,11 +66,9 @@ class QFunctionApproximator(object):
                 #newWeights[j] += self.alpha * gradient
             self.weights = newWeights
             self.batch = []
-            print(self.weights)
 
     def finalize(self, state, reward, actions):
         self.updateBatch(state, reward, None)
 
-
 def argmax(l):
-    return l.index(max(l))
+   return l.index(max(l))
