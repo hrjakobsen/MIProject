@@ -140,34 +140,24 @@ def getFeatures(player):
 def calculateFeatures(state, action, player):
     results = np.array([
         1,
-        distanceToHit(state, action, player),
-        distanceToMiss(state, action, player),
+        distanceToHitOrMissSquare(state, action, player, state.hits),
+        distanceToHitOrMissSquare(state, action, player, state.misses),
+        #distanceToHit(state, action, player),
+        #distanceToMiss(state, action, player),
         hitsOnALine(state, action, player)
     ])
 
     return results
 
-def distanceToHit(state, action, player):
+def distanceToHitOrMissSquare(state, action, player, squares):
     minDist = state.boardSize * 2
-    for hit in state.hits:
+    for square in squares:
         # Manhattan distance
-        tempDist = abs(action[0] - hit[0]) + abs(action[1] - hit[1])
+        tempDist = abs(action[0] - square[0]) + abs(action[1] - square[1])
         if tempDist < minDist:
             minDist = tempDist
 
     return (minDist - 1) / (state.boardSize * 2 - 1)
-    return minDist
-
-def distanceToMiss(state, action, player):
-    minDist = state.boardSize * 2
-    for miss in state.misses:
-        # Manhattan distance
-        tempDist = abs(action[0] - miss[0]) + abs(action[1] - miss[1])
-        if tempDist < minDist:
-            minDist = tempDist
-
-    return (minDist - 1) / (state.boardSize * 2 - 1)
-    return minDist
 
 def hitsOnALine(state, action, player):
     if len(state.hits) >= 2:
