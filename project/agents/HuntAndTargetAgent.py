@@ -1,7 +1,7 @@
 #from games.hexagon import HexagonGame
 import numpy as np
 
-class HuntAndSeekAgent(object):
+class HuntAndTargetAgent(object):
     def __init__(self, boardsize):
         self.boardsize = boardsize
 
@@ -13,6 +13,7 @@ class HuntAndSeekAgent(object):
         :param actions: the actions to choose from
         :return: the action to play in this state
         """
+        #print(state.hits)
         for hit in state.hits:
             for otherHit in state.hits:
                 action = None

@@ -113,7 +113,7 @@ def learnVisual(agents, numGames, boardSize, ships, epsilon):
 
             playerMoves[playerIndex] = numMoves
             playerIndex += 1
-            agent.finalize(game, game.getReward(1), game.getActions(1))
+            #agent.finalize(game, game.getReward(1), game.getActions(1))
         if playerMoves[0] < playerMoves[1]:
             funcApproxWins += 1
         if playerMoves[0] == playerMoves[1]:
@@ -132,7 +132,7 @@ g = BattleshipGame(trainBoardSize, trainShips)
 #agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.98, alpha=0.1, minWeight=-1, maxWeight=1)
 agent1 = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.98, alpha=0.3, minWeight=-1, maxWeight=1)
 agent2 = HuntAndTargetAgent(trainBoardSize)
-agent2 = RandomAgent()
+#agent2 = RandomAgent()
 
 agents = [agent1, agent2]
 
