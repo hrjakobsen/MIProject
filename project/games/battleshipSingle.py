@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 import math
 
 WATER = 0
@@ -52,7 +53,7 @@ class BattleshipGame(object):
     def __deepcopy__(self, _):
         new = BattleshipGame(self.boardSize, self.ships)
         new.board = self.board.copy()
-        new.shipStatus = self.shipStatus.copy()
+        new.shipStatus = copy.deepcopy(self.shipStatus)
         new.hits = self.hits.copy()
         new.numHits = self.numHits
         new.misses = self.misses.copy()
