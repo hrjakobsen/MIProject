@@ -6,8 +6,8 @@ UP = 1
 NOTHING = 0
 DOWN = -1
 
-pongWidth = 200
-pongHeight= 100
+pongWidth = 100
+pongHeight= 50
 
 class PongGame(object):
     def __init__(self, ballVelocity=None):
@@ -237,16 +237,16 @@ def calculateFeatures(state, action, player):
         #nextState.ballVelocity[0],
         #nextState.ballVelocity[1],
         #distanceToBall(nextState, player),
-        #getAngle(nextState, player),
-        #distanceFromCenter(nextState, player),
-        getAngleLookahead(nextState, player)
+        getAngle(nextState, player),
+        distanceFromCenter(nextState, player)
+        #getAngleLookahead(nextState, player)
     ])
 
     return results
 
 def distanceFromCenter(s, player):
     dist = abs(s.p1pos - s.height // 2) if player == 1 else abs(s.p2pos - s.height // 2)
-    return dist
+    return dist // pongHeight
 
 def getAngle(s, player):
     #return 0 if the ball is not travelling in the direction of the player

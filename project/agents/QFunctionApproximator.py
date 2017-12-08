@@ -69,6 +69,5 @@ class QFunctionApproximator(object):
     def finalize(self, state, reward, actions):
         self.updateBatch(state, reward, None)
 
-
 def argmax(l):
-    return l.index(max(l))
+   return l.index(max(l))

@@ -10,3 +10,6 @@ class GreedyPongAgent(object):
     def getMove(self, state: PongGame, reward, actions):
         pos = state.p1pos if self.player == 1 else state.p2pos
         return actions[1] if state.ballPosition[1] > pos else actions[2]
+
+    def getTrainedMove(self, state, actions):
+        return self.getMove(state, 0, actions)
