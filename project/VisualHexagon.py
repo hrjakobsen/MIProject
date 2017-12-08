@@ -29,7 +29,7 @@ g = HexagonGame(1, 1)
 
 numGames = 1
 width = 3
-height = 3
+height = 4
 
 def drawHexagon(game: HexagonGame, surface):
     for x in range(game.width):
@@ -79,8 +79,11 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
 
     isRunning = True
 
-    agent1 = QFunctionApproximator(1, len(game.calculateFeatures(game, 0, 1)), batchSize=100, minWeight=5, maxWeight=5)#QFunctionApproximator(1, len(game.getFeatures(1)), game.getActions(), weightMultiplier=5)
-    agent2 = RandomAgent()#TabularQLearner({}, {}, 1)
+    agent2 = QFunctionApproximator(2, len(game.calculateFeatures(game, 0, 2)), batchSize=100, minWeight=5, maxWeight=5)#RandomAgent()#QFunctionApproximator(1, len(game.getFeatures(1)), game.getActions(), weightMultiplier=5)
+    agent1 = GreedyHexAgent(1)#QFunctionApproximator(2, len(game.calculateFeatures(game, 0, 2)), batchSize=100, minWeight=5, maxWeight=5)#RandomAgent()#QFunctionApproximator(1, len(game.getFeatures(1)), game.getActions(), weightMultiplier=5)#TabularQLearner({}, {}, 1)
+
+    agent2.weights[0] = 4
+    agent2.weights[1] = 20
 
     playerTurn = 1
 
@@ -93,18 +96,19 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
         if drawGame:
             surface.fill((200, 200, 200))
             drawHexagon(runningGame, surface)
+            pygame.display.flip()
 
-        if gamesPlayed < 1000:
-            makeMove(agent1 if playerTurn == 1 else agent2, runningGame, playerTurn, epsilon)
-        else:
-            makeMove2(agent1 if playerTurn == 1 else agent2, runningGame, playerTurn)
+        #if gamesPlayed < 1000:
+        #    makeMove(agent1 if playerTurn == 1 else agent2, runningGame, playerTurn, epsilon)
+        #else:
+        makeMove2(agent1 if playerTurn == 1 else agent2, runningGame, playerTurn)
 
         if runningGame.gameEnded():
             reward1 = runningGame.getReward(1)
             reward2 = runningGame.getReward(2)
 
-            agent1.finalize(runningGame, reward1, game.getActions())
-            agent2.finalize(runningGame, reward2, game.getActions())
+        #    agent1.finalize(runningGame, reward1, game.getActions())
+        #    agent2.finalize(runningGame, reward2, game.getActions())
             runningGame = HexagonGame(gameWidth,gameHeight)
             player1Won += 1 if reward1 == 1 else 0
             gamesPlayed += 1
@@ -112,10 +116,13 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
             #if gamesPlayed == 1000 or gamesPlayed == 2000:
             #    player1Won = 0
             #    time.sleep(5)
+            print(gamesPlayed)
+            if (gamesPlayed == 1000):
+                print("player1 won: ", 1000-player1Won)
+                isRunning = False
 
         playerTurn = 2 if playerTurn == 1 else 1
 
-        pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 isRunning = False
@@ -126,6 +133,6 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
                     drawGame = not drawGame
 
         if drawGame:
-            pygame.time.delay(100)
+            pygame.time.delay(400)
 
 learnVisual(width, height)

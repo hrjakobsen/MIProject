@@ -17,6 +17,8 @@ class BattleshipGame(object):
         self.numHits = 0
         self.misses = []
         self.numFeatures = None
+        self.numMoves = 0
+        self.removedShipSquares = []
 
     def getActions(self, player):
         if self.actions is None:
@@ -58,11 +60,14 @@ class BattleshipGame(object):
         new.numHits = self.numHits
         new.misses = self.misses.copy()
         new.numFeatures = self.numFeatures
+        new.numMoves = self.numMoves
+        new.removedShipSquares = self.removedShipSquares.copy()
         return new
 
     def makeMove(self, player, action):
         self.board[action[0], action[1]] += 2
         self.actions.remove(action)
+        self.numMoves += 1
 
         if self.board[action[0], action[1]] == WATERHIT:
             self.misses.append(action)
@@ -70,6 +75,7 @@ class BattleshipGame(object):
         if self.board[action[0], action[1]] == SHIPHIT:
             self.numHits += 1
             self.hits.append(action)
+            self.numMoves -= 1
 
             for ship in self.shipStatus:
                 if (action, True) in ship:
@@ -82,7 +88,7 @@ class BattleshipGame(object):
 
                     if shipSunk:
                         for cell in ship:
-                            self.hits.remove(cell[0])
+                            self.removedShipSquares.append(cell[0])
 
 def randomBoard(boardSize, ships):
     board = np.zeros((boardSize, boardSize), dtype=int)
@@ -140,8 +146,8 @@ def getFeatures(player):
 def calculateFeatures(state, action, player):
     results = np.array([
         1,
-        distanceToHitOrMissSquare(state, action, player, state.hits),
         distanceToHitOrMissSquare(state, action, player, state.misses),
+        distanceToHitOrMissSquare(state, action, player, state.hits),
         #distanceToHit(state, action, player),
         #distanceToMiss(state, action, player),
         hitsOnALine(state, action, player)

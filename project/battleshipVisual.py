@@ -77,9 +77,11 @@ def learnVisual(agents, numGames, boardSize, ships, epsilon):
 
     #startGame = BattleshipGame(boardSize, ships)
 
+    playerMoves = [0, 0, 0, 0]
     for x in range(numGames):
         startGame = BattleshipGame(boardSize, ships)
-        playerMoves = [0, 0]
+        playerMoves[0] = 0
+        playerMoves[1] = 0
         playerIndex = 0
         for agent in agents:
             numMoves = 0
@@ -92,7 +94,6 @@ def learnVisual(agents, numGames, boardSize, ships, epsilon):
 
             while not game.gameEnded():
                 makeTrainedMove(agent, game)
-                numMoves += 1
 
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -111,7 +112,8 @@ def learnVisual(agents, numGames, boardSize, ships, epsilon):
                     drawBattleship(game, surface)
                     pygame.display.flip()
 
-            playerMoves[playerIndex] = numMoves
+            playerMoves[playerIndex] = game.numMoves
+            playerMoves[playerIndex+2] += game.numMoves
             playerIndex += 1
             #agent.finalize(game, game.getReward(1), game.getActions(1))
         if playerMoves[0] < playerMoves[1]:
@@ -121,6 +123,8 @@ def learnVisual(agents, numGames, boardSize, ships, epsilon):
 
     print("func wins: ", funcApproxWins)
     print("num of draws: ", numOfDraws)
+    print("avg. num of moves for func: ", playerMoves[2] / numGames)
+    print("avg. num of moves for HuntAndTarget: ", playerMoves[3] / numGames)
 
 
 
@@ -140,8 +144,8 @@ np.random.seed(1)
 
 #trainAgent(agent1, numTrain, trainBoardSize, trainShips, 0.1)
 
-agents[0].weights[1] = -4
-agents[0].weights[2] = 2
-agents[0].weights[3] = 2
+agents[0].weights[1] = 2
+agents[0].weights[2] = -8
+agents[0].weights[3] = 4
 learnVisual(agents, numTrain, trainBoardSize, trainShips, 0)
 
