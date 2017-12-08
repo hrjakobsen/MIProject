@@ -1,29 +1,37 @@
 from games.battleshipSingle import BattleshipGame
+from agents.QFunctionApproximator import QFunctionApproximator
 import numpy as np
 
 np.random.seed(1)
+np.set_printoptions(suppress=True, precision=2)
 
 game = BattleshipGame(boardSize=6, ships=[5])
-game.getActions(1)
+allActions = game.getActions(1)
+agent = QFunctionApproximator(1, game.getNumFeatures())
 
 print(game.board)
-game.calculateFeatures(game, (0, 0), 1)
+print()
 
 game.makeMove(1, (0, 0))
 print(game.board)
-game.calculateFeatures(game, (4, 0), 1)
+print()
 
-game.makeMove(1, (4, 3))
-print(game.board)
-game.calculateFeatures(game, (4, 0), 1)
+agent.weights = np.array([4.59891631, -9.93408078, 9.08411365, 5.55554139])
+featureMap = np.ndarray((game.boardSize, game.boardSize), dtype=np.float64)
+featureMap.fill(9)
+for action in allActions:
+    featureMap[action[0], action[1]] = agent.Q(game, action)#game.calculateFeatures(game, action, None)[3]
+
+print(featureMap)
 
 game.makeMove(1, (4, 4))
 print(game.board)
-game.calculateFeatures(game, (4, 0), 1)
-game.calculateFeatures(game, (4, 2), 1)
-game.calculateFeatures(game, (4, 3), 1)
-game.calculateFeatures(game, (4, 5), 1)
+print()
+featureMap = np.ndarray((game.boardSize, game.boardSize), dtype=np.float64)
+featureMap.fill(9)
+for action in allActions:
+    featureMap[action[0], action[1]] = agent.Q(game, action)#game.calculateFeatures(game, action, None)[3]
 
-game.makeMove(1, (4, 1))
-print(game.board)
-game.calculateFeatures(game, (4, 2), 1)
+print(featureMap)
+
+

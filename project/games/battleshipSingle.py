@@ -1,5 +1,5 @@
 import numpy as np
-import math
+import copy
 
 WATER = 0
 SHIP = 1
@@ -45,14 +45,14 @@ class BattleshipGame(object):
     def getReward(self, player):
         if self.gameEnded():
             numMoves = len(np.where(self.board > 1)[0])
-            return (self.numHits * 20) - (numMoves * 5)
+            return (self.numHits * 20) - numMoves
 
         return 0
 
     def __deepcopy__(self, _):
         new = BattleshipGame(self.boardSize, self.ships)
         new.board = self.board.copy()
-        new.shipStatus = self.shipStatus.copy()
+        new.shipStatus = copy.deepcopy(self.shipStatus)
         new.hits = self.hits.copy()
         new.numHits = self.numHits
         new.misses = self.misses.copy()
@@ -70,6 +70,7 @@ class BattleshipGame(object):
             self.numHits += 1
             self.hits.append(action)
 
+            return
             for ship in self.shipStatus:
                 if (action, True) in ship:
                     ship[ship.index((action, True))] = (action, False)
@@ -169,16 +170,22 @@ def distanceToMiss(state, action, player):
     return minDist
 
 def hitsOnALine(state, action, player):
+    for hit in state.hits:
+        if action[0] == hit[0] or action[1] == hit[1]:
+            return 1
+
+    return 0
+
     if len(state.hits) >= 2:
         for hit in state.hits:
             for otherHit in state.hits:
                 dRow = hit[0] - otherHit[0]
                 dCol = hit[1] - otherHit[1]
 
-                if dRow == 0 and dCol != 0:
+                if dRow == 0 and (dCol == 1 or dCol == -1):
                     newAction1 = (hit[0], otherHit[1] + 1)
                     newAction2 = (hit[0], hit[1] - 1)
-                elif dRow != 0 and dCol == 0:
+                elif (dRow == 1 or dRow == -1) and dCol == 0:
                     newAction1 = (hit[0] + 1, hit[1])
                     newAction2 = (otherHit[0] - 1, hit[1])
                 else:

@@ -49,15 +49,12 @@ def learnVisual(agent, numGames, boardSize, ships, epsilon):
     surface = pygame.display.get_surface()
     drawGame = True
 
-    startGame = BattleshipGame(boardSize, ships)
-
     for x in range(numGames):
         pygame.display.set_caption("Game {0} - {1}".format(x, agent.weights))
-        if x % 100 == 99:
+        if x % 1 == 0:
             startGame = BattleshipGame(boardSize, ships)
 
         game = copy.deepcopy(startGame)
-        #game = BattleshipGame(boardSize, ships)
 
         if drawGame:
             surface.fill((200, 200, 200))
@@ -91,7 +88,8 @@ trainBoardSize = 10
 trainShips = [2, 3, 3, 4, 5]
 
 g = BattleshipGame(trainBoardSize, trainShips)
-agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.98, alpha=0.1, minWeight=-1, maxWeight=1)
+agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000000, gamma=0.9, decay=0.98, alpha=0.1, minWeight=-1, maxWeight=1)
+agent.weights = [4.54690403, -10.15209495, 9.66192396, 5.33409518]
 
 np.random.seed(1)
 
