@@ -33,6 +33,8 @@ class PongGame(object):
         self.paddleHeight = 20
         self.winner = None
         self.numFeatures = None
+        self.lastP1Action = None
+        self.lastP2Action = None
 
     def __deepcopy__(self, _):
         new = PongGame(self.ballVelocity)
@@ -59,6 +61,20 @@ class PongGame(object):
     def getReward(self, player):
         return getReward(self, player)
 
+    def makeMove(self, player, action):
+        if (player == 1 and self.lastP1Action is not None) or (player == 2 and self.lastP2Action is not None):
+            raise ValueError("Player {} cannot make two actions in a row".format(player))
+        if player == 1:
+            self.lastP1Action = action
+        else:
+            self.lastP2Action = action
+
+        if self.lastP1Action is None or self.lastP2Action is None:
+            return self
+
+        newgame = makeMove(self, self.lastP1Action, self.lastP2Action)
+        self.lastP1Action, self.lastP2Action = None, None
+        return newgame
 
 
 def updateBall(state: PongGame):
