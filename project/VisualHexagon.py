@@ -52,7 +52,7 @@ def drawCell(surface, x, y, colour):
         (255, 255, 255)
     ]
 
-    foundColour = 0
+    foundColour = 0 #colours[colour % 5]
     if colour < 5:
         foundColour = colours[colour]
     elif colour < 10:
@@ -91,11 +91,11 @@ def learnVisual(gameWidth, gameHeight, epsilon=0.001):
 
     isRunning = True
 
-    agent2 = QFunctionApproximator(2, len(game.calculateFeatures(game, 0, 2)), batchSize=100, minWeight=5, maxWeight=5)#RandomAgent()#QFunctionApproximator(1, len(game.getFeatures(1)), game.getActions(), weightMultiplier=5)
-    agent1 = GreedyHexAgent(1)#QFunctionApproximator(2, len(game.calculateFeatures(game, 0, 2)), batchSize=100, minWeight=5, maxWeight=5)#RandomAgent()#QFunctionApproximator(1, len(game.getFeatures(1)), game.getActions(), weightMultiplier=5)#TabularQLearner({}, {}, 1)
+    agent1 = QFunctionApproximator(1, len(game.calculateFeatures(game, 0, 1)), batchSize=100, minWeight=5, maxWeight=5)#RandomAgent()#QFunctionApproximator(1, len(game.getFeatures(1)), game.getActions(), weightMultiplier=5)
+    agent2 = GreedyHexAgent(2)#QFunctionApproximator(2, len(game.calculateFeatures(game, 0, 2)), batchSize=100, minWeight=5, maxWeight=5)#RandomAgent()#QFunctionApproximator(1, len(game.getFeatures(1)), game.getActions(), weightMultiplier=5)#TabularQLearner({}, {}, 1)
 
-    agent2.weights[0] = 4
-    agent2.weights[1] = 20
+    agent1.weights[0] = 4
+    agent1.weights[1] = 20
 
     playerTurn = 1
 

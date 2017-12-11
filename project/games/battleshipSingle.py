@@ -47,8 +47,8 @@ class BattleshipGame(object):
 
     def getReward(self, player):
         if self.gameEnded():
-            numMoves = len(np.where(self.board > 1)[0])
-            return (self.numHits * 20) - numMoves
+            #numMoves = len(np.where(self.board > 1)[0])
+            return (self.numHits * 20) * (self.boardSize / self.numMoves)
 
         return 0
 
@@ -89,6 +89,7 @@ class BattleshipGame(object):
                     if shipSunk:
                         for cell in ship:
                             self.removedShipSquares.append(cell[0])
+                            self.hits.remove(cell[0])
 
 
 def randomBoard(boardSize, ships):
@@ -171,6 +172,15 @@ def distanceToHitOrMissSquare(state, action, player, squares):
 
 """ # 610
 def hitsOnALine(state, action, player):
+<<<<<<< Updated upstream
+=======
+    for hit in state.hits:
+        if action[0] == hit[0] or action[1] == hit[1]:
+            return 1
+
+    #return 0
+
+>>>>>>> Stashed changes
     if len(state.hits) >= 2:
         for hit in state.hits:
             for otherHit in state.hits:

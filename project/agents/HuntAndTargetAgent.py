@@ -8,10 +8,10 @@ class HuntAndTargetAgent(object):
 
     def getMove(self, state: BattleshipGame, reward, actions):
         hits = state.hits
-        if hits != []:
-            for shipSquare in state.removedShipSquares:
-                hits.remove(shipSquare)
-                state.removedShipSquares.remove(shipSquare)
+        #if hits != []:
+        #    for shipSquare in state.removedShipSquares:
+        #        hits.remove(shipSquare)
+        #        state.removedShipSquares.remove(shipSquare)
         """
         Ask the agent what action to take
         :param state: the current game

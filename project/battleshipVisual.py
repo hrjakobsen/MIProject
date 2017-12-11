@@ -7,7 +7,7 @@ import pygame
 import numpy as np
 import copy
 
-gameSizeModifier = 80
+gameSizeModifier = 30
 
 def makeMove(agent, game, epsilon):
     actions = game.getActions(1)
@@ -49,7 +49,7 @@ def trainAgent(agent, numGames, boardSize, ships, epsilon):
     StartGame = BattleshipGame(boardSize, ships)
     for x in range(numGames):
         #print(agent.weights)
-        if i < 20:
+        if i < numGames/10:
             game = copy.deepcopy(StartGame)
         else:
             game = BattleshipGame(boardSize, ships)
@@ -134,7 +134,7 @@ trainShips = [2, 3, 3, 4, 5]
 
 g = BattleshipGame(trainBoardSize, trainShips)
 #agent = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.98, alpha=0.1, minWeight=-1, maxWeight=1)
-agent1 = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.98, alpha=0.3, minWeight=-1, maxWeight=1)
+agent1 = QFunctionApproximator(1, g.getNumFeatures(), batchSize=80, gamma=0.9, decay=0.98, alpha=0.5, minWeight=0, maxWeight=0)
 agent2 = HuntAndTargetAgent(trainBoardSize)
 #agent2 = RandomAgent()
 
@@ -144,7 +144,7 @@ np.random.seed(1)
 
 #trainAgent(agent1, numTrain, trainBoardSize, trainShips, 0.1)
 
-agents[0].weights[1] = 2
+agents[0].weights[1] = 4
 agents[0].weights[2] = -8
 agents[0].weights[3] = 4
 learnVisual(agents, numTrain, trainBoardSize, trainShips, 0)
