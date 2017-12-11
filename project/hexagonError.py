@@ -1,26 +1,29 @@
-from games.hexagon import HexagonGame
+from games.hexagon import HexagonGame, getHash
 from agents.TabularQLearner import TabularQLearner
 from agents.QFunctionApproximator import QFunctionApproximator
 from agents.RandomAgent import RandomAgent
 from agents.GreedyHexAgent import GreedyHexAgent
+import pickle
 
 import numpy as np
-import time
+import matplotlib.pyplot as plt
 import copy
+
+
+def loadFromFile(fileName):
+    with open(fileName, 'rb') as handle:
+        return pickle.load(handle)
+
 
 def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
     p2Start = False
-    #p1Wins = 0
     outcomes = []
     interval = numGames / 100
 
     startGame = HexagonGame(width, height)
 
-    print(startGame.board)
-
     for x in range(numGames):
         game = copy.deepcopy(startGame)
-        #game = HexagonGame(width, height)
 
         if p2Start:
             makeMove(agent2, game, 2, epsilon)
@@ -34,59 +37,56 @@ def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
 
         agent1.finalize(game, game.getReward(1), game.getActions())
         agent2.finalize(game, game.getReward(2), game.getActions())
-        
+
         p2Start = not p2Start
-        #p1Wins += 1 if game.getReward(1) == 1 else 0
         outcomes.append(1 if game.getReward(1) == 1 else 2)
         if x % interval == 0:
             print("\rPlayed %s/%s games" % (x, numGames), end="")
 
-    #return p1Wins
     return outcomes
 
 
 def makeMove(agent, game, player, epsilon):
-    action = agent.getMove(game, game.getReward(player), game.getActions())
+    actions = game.getActions()
+    action = agent.getMove(game, game.getReward(player), actions)
+
+    if agent == agent1:
+        errors.append((agent.Q.get((game.hash(), action), 0) - realQs[game.hash(), action]) ** 2)
+        #errors.append((agent.Q(game, action) - realQs[game.hash(), action]) ** 2)
+
     if np.random.rand() < epsilon:
-        action = g.getActions()[np.random.randint(5)]
+        action = actions[np.random.randint(len(actions))]
         agent.s = None
     game.makeMove(player, action)
 
 
 np.set_printoptions(suppress=True, precision=2)
-np.random.seed(0)
 
-numGames = 50000#0000
-width = 3
-height = 3
+numGames = 10000
+width = 5
+height = 5
+
+realQs = loadFromFile("realQ_{0}x{1}".format(width, height))
+errors = []
 
 g = HexagonGame(width, height)
-agent1 = TabularQLearner.load(1)#TabularQLearner(g.getActions(), {}, {}, 1)
-agent2 = RandomAgent()
+#agent1 = QFunctionApproximator(1, len(g.calculateFeatures(g, 0, 1)), batchSize=1000, gamma=1, decay=0.99, alpha=0.1)
+agent1 = TabularQLearner({}, {}, 1)
+agent2 = GreedyHexAgent(2)
 
-startTime = time.time()
-outcomes = learn(agent1, agent2, numGames, 0.5, width, height)
-print("\nDone! - Played {0} games. Took {1}s. Won {2} games.".format(str(numGames), str(
-    round(time.time() - startTime, 2)), str(len([g for g in outcomes if g == 1]))))
+np.random.seed(2)
+learn(agent1, agent2, numGames, 0.1, width, height)
 
-#print(outcomes)
 
-p1Wins = []
-wonGames = 0
-for i in range(len(outcomes)):
-    if outcomes[i] == 1:
-        wonGames += 1
-    p1Wins.append(wonGames)
 
-#print(p1Wins)
+runningMeanNumber = 100
+numDataPoints = 100
 
-agent1.save(1)
-print(len(agent1.Q))
+errors = np.convolve(errors, np.ones((runningMeanNumber,))/runningMeanNumber, mode='valid')
+count = 0
+for x in range(0, len(errors), (len(errors)//numDataPoints)):
+    print("{0} {1}".format(count, errors[x]))
+    count += 1
 
-#plt.plot(p1Wins)
-#plt.show()
-
-#num_bins = numGames // 100
-#n, bins, patches = ax.hist(p1Wins, num_bins, normed=0, histtype='step', cumulative=True)
-#n, bins, patches = ax.hist(p1Wins, num_bins, normed=0)
-
+plt.scatter(range(len(errors)), errors)
+plt.show()

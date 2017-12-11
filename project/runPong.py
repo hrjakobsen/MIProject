@@ -24,10 +24,10 @@ def learn(agent1, agent2, numGames, epsilon):
             if game.gameEnded():
                 break
 
-        agent1.finalize(game, game.getReward(1))
-        agent2.finalize(game, game.getReward(2))
+        agent1.finalize(game, game.getReward(1), game.getActions(1))
+        agent2.finalize(game, game.getReward(2), game.getActions(2))
 
-        p1Wins += 1 if game.getReward(1) == 1 else 0
+        p1Wins += 1 if game.winner == 1 else 0
         if x % interval == 0:
             print("\rPlayed %s/%s games" % (x, numGames), end="")
 
@@ -35,16 +35,16 @@ def learn(agent1, agent2, numGames, epsilon):
 
 
 def getMove(agent, game: PongGame, player, epsilon):
-    action = agent.getMove(game, game.getReward(player))
+    action = agent.getMove(game, game.getReward(player), game.getActions(player))
     if np.random.rand() < epsilon:
-        action = agent.actions[np.random.randint(3)]
+        action = game.getActions(player)[np.random.randint(3)]
         agent.s = None
     return action
 
 g = PongGame()
-features = len(g.getFeatures(1))
-agent1 = QFunctionApproximator(1, features, g.getActions(), gamma=1, batchSize=2000)
-agent2 = QFunctionApproximator(1, features, g.getActions(), gamma=1, batchSize=2000)
+features = g.getNumFeatures()
+agent1 = QFunctionApproximator(1, features, g.getActions(1), gamma=1, weightMultiplier=-1)
+agent2 = QFunctionApproximator(2, features, g.getActions(2), gamma=1, weightMultiplier=-1)
 numGames = 50
 
 startTime = time.time()

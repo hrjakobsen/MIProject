@@ -11,7 +11,7 @@ from games.pong import PongGame, makeMove, pongWidth, pongHeight
 np.set_printoptions(suppress=True, precision=4  )
 np.random.seed(0)
 paddleDrawWidth = 4
-gameSizeModifier = 4
+gameSizeModifier = 8
 frame = 0
 
 def drawGame(surface, game: PongGame, p1wins, numgames, myfont):
@@ -48,9 +48,9 @@ def drawGame(surface, game: PongGame, p1wins, numgames, myfont):
 
 def drawTraining(surface, myfont, numgames):
     text = myfont.render("Training...", 1, (255, 0, 0))
-    surface.blit(text, (pongWidth * gameSizeModifier // 4, pongHeight * gameSizeModifier // 2))
+    surface.blit(text, (pongWidth * 0.5, pongHeight * gameSizeModifier // 2))
     text = myfont.render("game {0}".format(str(numgames)), 1, (255, 0, 0))
-    surface.blit(text, (pongWidth * gameSizeModifier // 4, pongHeight * gameSizeModifier // 6))
+    surface.blit(text, (pongWidth * 0.5, pongHeight * gameSizeModifier // 6))
 
 
 def getMove(agent, game: PongGame, player, epsilon):
@@ -61,6 +61,8 @@ def getMove(agent, game: PongGame, player, epsilon):
         agent.s = None
     return action
 
+def getMove2(agent, game: PongGame, player):
+    return agent.getTrainedMove(game, game.getActions(player))
 
 def learnPong(epsilon):
     pygame.init()
@@ -77,8 +79,9 @@ def learnPong(epsilon):
     game = PongGame()
 
     features = game.getNumFeatures()
-    agent1 = QFunctionApproximator(1, features, gamma=0.9, batchSize=1000, alpha=0.2)
-    agent2 = GreedyPongAgent(2)
+    #agent1 = RandomAgent()
+    agent1 = QFunctionApproximator(1, features, gamma=1, batchSize=4000, alpha=0.1, minWeight=-20, maxWeight=-20)
+    agent2 = RandomAgent()#GreedyPongAgent(2)#RandomAgent()#QFunctionApproximator(2, features, gamma=0.9, batchSize=1000, alpha=0.2, minWeight=-20, maxWeight=-20)
 
     while isRunning:
         if displayGame:
@@ -100,18 +103,26 @@ def learnPong(epsilon):
                 elif event.key == pygame.K_q:
                     isRunning = False
 
-        action1 = getMove(agent1, game, 1, epsilon)
-        action2 = getMove(agent2, game, 2, epsilon)
+        if numGames < 200:
+            action1 = getMove(agent1, game, 1, epsilon)
+            action2 = getMove(agent2, game, 2, epsilon)
+        else:
+            action1 = getMove2(agent1, game, 1)
+            action2 = getMove2(agent2, game, 2)
 
         game = makeMove(game, action1, action2)
 
         if game.gameEnded():
             agent1Reward = game.getReward(1)
             agent2Reward = game.getReward(2)
-            agent1.finalize(game, agent1Reward)
-            agent2.finalize(game, agent2Reward)
+            agent1.finalize(game, agent1Reward, game.getActions(1))
+            agent2.finalize(game, agent2Reward, game.getActions(2))
             p1Wins += 1 if agent1Reward > 0 else 0
             numGames += 1
+
+            if(numGames == 200 or numGames == 400):
+                print("Player 1 wins: ", p1Wins)
+                p1Wins = 0
 
             game = PongGame()
 

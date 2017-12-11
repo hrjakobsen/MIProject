@@ -237,26 +237,76 @@ def calculateFeatures(state, action, player):
         #nextState.ballPosition[1],
         #nextState.ballVelocity[0],
         #nextState.ballVelocity[1],
-        distanceToBall(nextState, player),
-        #getAngle(nextState, player)
+        #distanceToBall(nextState, player),
+        getAngle(nextState, player),
+        distanceFromCenter(nextState, player)
+        #getAngleLookahead(nextState, player)
     ])
 
     return results
 
+def distanceFromCenter(s, player):
+    dist = abs(s.p1pos - s.height // 2) if player == 1 else abs(s.p2pos - s.height // 2)
+    return dist // pongHeight
+
 def getAngle(s, player):
+    #return 0 if the ball is not travelling in the direction of the player
+    #since the agent needs to minimize the angle
+    if (player == 1 and s.ballVelocity[0] > 0):
+        return 0
+    if (player == 2 and s.ballVelocity[0] < 0):
+        return 0
+
     vector = getVectorBetweenBallAndPaddle(s, player)
     lengthOfPaddleVec = math.sqrt(vector[0] * vector[0] + vector[1] * vector[1])
+
+    #avoid division by 0
+    lengthOfPaddleVec = 0.000001 if lengthOfPaddleVec == 0 else lengthOfPaddleVec
     dotProduct = np.dot(vector, s.ballVelocity)
     angle = math.acos(dotProduct / np.dot(lengthOfPaddleVec, 1))
+
+    #angle in degrees
     angle *= 180/math.pi
-    if angle > 170:
-        angle = 0
+
     return angle
 
+def getAngleLookahead(s: PongGame, player):
+    # keep simulating until we find the vector that would hit
+    direction = s.ballVelocity.copy()
+    position = s.ballPosition.copy()
+    while True:
+        #factorToPaddle()
+        factorPaddle = max([(paddle - position[0]) / direction[0] for paddle in [0, s.width]])
+        #factor wall
+        factorWall = 1e20 if direction[1] == 0 else max([(wall - position[1]) / direction[1] for wall in
+                [s.ballRadius, s.height - s.ballRadius]])
+
+        if factorPaddle < factorWall:
+            # we got a hit
+            if player == 1 and direction[0] < 0:
+                break
+            elif player == 2 and direction[0] > 0:
+                break
+            position += direction * factorPaddle
+            direction[0] *= -1
+        elif factorWall < factorPaddle:
+            position += direction * factorWall
+            direction[1] *= -1
+
+    #
+    endPosition = position + direction * factorPaddle
+
+    yPosition = endPosition[1]
+
+    paddle = s.p1pos if player == 1 else s.p2pos
+
+    diff = yPosition - paddle
+
+    print(yPosition, paddle)
+
+    return abs(diff)
+
 def getVectorBetweenBallAndPaddle(s, player):
-    #vector = np.array()
-    #if (player == 1):
-    #    vector = np.array([0 - s.ballPosition[0], s.p1pos - s.ballPosition[1]])
     vector = np.array([0 - s.ballPosition[0], s.p1pos - s.ballPosition[1]]) if player == 1 else np.asarray([200 - s.ballPosition[0], s.p2pos - s.ballPosition[1]])
     return vector
 

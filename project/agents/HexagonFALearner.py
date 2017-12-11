@@ -1,4 +1,4 @@
-from games.HexagonGame import HexagonGame
+from games.hexagon import HexagonGame
 import math
 import numpy as np
 
@@ -103,7 +103,7 @@ class HexFALearner(object):
         return 60 / (60 + self.numBatches)
 
 
-    def finalize(self, state, reward):
+    def finalize(self, state, reward, actions):
         if len(self.batch) >= self.batchSize:
             self._updateWeights()
             self.batch = []

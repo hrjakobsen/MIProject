@@ -1,4 +1,4 @@
-from games.HexagonGame import HexagonGame
+from games.hexagon import HexagonGame
 import copy
 import pickle
 import os.path
@@ -17,7 +17,7 @@ class TabularQLearner(object):
     from Russel & Norvig (2010) p. 844
     """
 
-    def __init__(self, actions, Q, N, gamma=1):
+    def __init__(self, Q, N, gamma=1):
         """
         :param player: the player id of the agent (1 or 2)
         :param Q: The Q table to use
@@ -25,35 +25,35 @@ class TabularQLearner(object):
         """
         self.Q = Q
         self.N = N
-        self.actions = actions
         self.gamma = gamma
         self.s = None
         self.hash = None
         self.a = None
         self.r = None
 
-    def getMove(self, state: HexagonGame, reward):
+    def getMove(self, state: HexagonGame, reward, actions):
         """
         Ask the agent what action to take
         :param state: the current game
         :param reward: the current reward
+        :param actions: the actions to chose from
         :return: the action to play in this state
         """
         if self.s is not None:
             self._incrementN()
-            self._updateQ(state, reward)
+            self._updateQ(state, reward, actions)
         self.s = copy.deepcopy(state)
-        self.a = self._argmax()
+        self.a = self._argmax(actions)
         self.r = reward
         return self.a
 
-    def _argmax(self):
+    def _argmax(self, actions):
         """
         :return: the action that results in the highest value from the f-function
         """
         s = self.s.hash()
-        vals = [self._f(self.Q.get((s, a), 0), self.N.get((s, a), 0)) for a in self.actions]
-        return self.actions.index(vals.index(max(vals)))
+        vals = [self._f(self.Q.get((s, a), 0), self.N.get((s, a), 0)) for a in actions]
+        return actions.index(vals.index(max(vals)))
 
     def _f(self, val, num):
         """
@@ -76,7 +76,7 @@ class TabularQLearner(object):
         a = self.a
         self.N[s, a] = self.N.get((s, a), 0) + 1
 
-    def _updateQ(self, sP: HexagonGame, rP):
+    def _updateQ(self, sP: HexagonGame, rP, actions):
         """
         Do the update rule for the Q-table
         :param sP: The current state
@@ -84,26 +84,26 @@ class TabularQLearner(object):
         :return:
         """
         s = self.s.hash()
-        sPh = sP.hash()
+        sP = sP.hash()
         a = self.a
         self.Q[s, a] = self.Q.get((s, a), 0) + self._alpha() * (
-            self.r + self.gamma * (max([self.Q.get((sPh, aP), 0) for aP in self.actions]) - self.Q.get((s, a), 0)))
+            self.r + self.gamma * (max([self.Q.get((sP, aP), 0) for aP in actions]) - self.Q.get((s, a), 0)))
 
     def _alpha(self):
         """
         The learning rate parameter is decreasing over time
         :return: the current learning rate parameter for the last state and action
         """
-        return 1#100 / (10000 + self.N.get((self.s.hash(), self.a), 0))
+        return 1 / (100 + self.N.get((self.s.hash(), self.a), 0))
 
-    def finalize(self, state, reward):
+    def finalize(self, state, reward, actions):
         if self.s is None:
             return
             
-        for a in self.actions:
+        for a in actions:
             self.Q[state.hash(), a] = reward
 
-        self._updateQ(state, reward)
+        self._updateQ(state, reward, actions)
 
         self.s = None
 

@@ -100,18 +100,6 @@ class pongTest(TestCase):
         # Assert
         self.assertEqual(expectedVelocity, result[1][1])
 
-    def testUpdateBall(self):
-        # Arrange
-        ballPosition = np.array([0, 47.5])
-        ballVelocity = np.array([0.3, 0.3])
-        pongGame = PongGame(ballVelocity, ballPosition)
-        expected = np.array([-0.3, -0.3])
-
-        # Act
-        result = updateBall(pongGame)
-
-        # Assert
-        self.assertEqual(expected, result[1][1])
 
 
 

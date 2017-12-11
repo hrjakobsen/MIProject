@@ -1,14 +1,5 @@
-from games.HexagonGame import HexagonGame
-import numpy as np
+from games.hexagon import HexagonGame
 import copy
-import sys
-import queue
-
-
-np.random.seed(0)
-
-gamma = 0.9
-
 
 def generateStates(state: HexagonGame):
     states = [state]
@@ -40,7 +31,7 @@ def generateStates(state: HexagonGame):
 
 
 class Node(object):
-    def __init__(self, state: HexagonGame, player):
+    def __init__(self, state: HexagonGame, player, gamma):
         self.state = state
         self.player = player
         self.terminal = state.gameEnded()
@@ -50,6 +41,7 @@ class Node(object):
         self.subTrees = {}
         self.hash = state.hash()
         self.possibleActions = []
+        self.gamma = gamma
 
     def build(self, nodes):
         nextPlayer = self.nextPlayer()
@@ -95,7 +87,7 @@ class Node(object):
             self.q = state2.getReward(1)
             return self.q
 
-        self.q = self.state.getReward(1) + gamma * q
+        self.q = self.state.getReward(1) + self.gamma * q
         return q
 
     def calculateRestOfQ(self, nodes):
@@ -108,17 +100,19 @@ class Node(object):
             subTree = self.subTrees[a]
             if subTree.hash == self.state.hash():
                 # discount moves which doesn't do anything
-                Q[self.hash, a] = self.state.getReward(1) + gamma * subTree.q
+                Q[self.hash, a] = self.state.getReward(1) + self.gamma * subTree.q
             else:
                 Q[self.hash, a] = subTree.q
 
-class HexagonBruteForce3(object):
-    def __init__(self, state: HexagonGame, player):
+class HexagonBruteforce(object):
+    def __init__(self, state: HexagonGame, player, gamma=1):
+        self.width = state.width
+        self.height = state.height
         states, terminal = generateStates(state)
         self.nodes = {}
         for s in states + terminal:
             for p in [1, 2]:
-                self.nodes[s.hash(), p] = Node(s, p)
+                self.nodes[s.hash(), p] = Node(s, p, gamma)
 
         # now build the tree
         for node in self.nodes.values():
@@ -139,7 +133,7 @@ class HexagonBruteForce3(object):
 
 
 
-    def getMove(self, state: HexagonGame, reward):
+    def getMove(self, state: HexagonGame, reward, actions):
 
         maxQ = None
         maxA = None
@@ -168,13 +162,11 @@ class HexagonBruteForce3(object):
                 maxA = a
         return maxA
 
-    def finalize(self, state, r):
+    def finalize(self, state, r, actions):
         pass  # game = HexagonGame(3, 3)
 
     def save(self):
-        fileName = "Bruteforce.txt"
+        fileName = "realQ_{0}x{1}".format(str(self.width), str(self.height))
         import pickle
         with open(fileName, 'wb') as handle:
-            pickle.dump(self.Q, handle, protocol=0)
-# q = HexagonBruteForce2(game, 1)  # generateStates(game)
-# q.getMove(game, 0)
+            pickle.dump(self.Q, handle, protocol=pickle.HIGHEST_PROTOCOL)
