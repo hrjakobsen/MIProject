@@ -6,12 +6,17 @@ SHIP = 1
 WATERHIT = 2
 SHIPHIT = 3
 
-
 class BattleshipGame(object):
     def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
         self.p1Game = _BattleshipSingleGame(boardSize, ships)
         self.p2Game = _BattleshipSingleGame(boardSize, ships)
         self.numFeatures = None
+
+    def __deepcopy__(self, _):
+        new = BattleshipGame(self.boardSize, self.ships)
+        new.p1Game = copy.deepcopy(self.p1Game)
+        new.p2Game = copy.deepcopy(self.p2Game)
+        new.numFeatures = self.numFeatures
 
     def getActions(self, player):
         # Actions available on the opponent's board
@@ -27,7 +32,10 @@ class BattleshipGame(object):
         return self.p2Game.getReward() if player == 1 else self.p1Game.getReward()
 
     def makeMove(self, player, action):
-        return self.p2Game.makeMove(action) if player == 1 else self.p1Game.makeMove(action)
+        if player == 1:
+            self.p2Game.makeMove(action)
+        else:
+            self.p1Game.makeMove(action)
 
 
 class _BattleshipSingleGame(object):
@@ -67,7 +75,15 @@ class _BattleshipSingleGame(object):
         return not np.any(self.board == SHIP)
 
     def calculateFeatures(self, state, action):
-        return calculateFeatures(state, action)
+        results = np.array([
+            1,
+            distanceToSquares(state, action, state.misses),
+            distanceToSquares(state, action, state.hits),
+            hitsOnALine(state, action),
+            chanceOfHittingShip(state, action)
+        ])
+
+        return results
 
     def getReward(self):
         if self.gameEnded():
@@ -147,18 +163,6 @@ def randomBoard(boardSize, ships):
                     placed = True
 
     return board, shipsList
-
-
-def calculateFeatures(state, action):
-    results = np.array([
-        1,
-        distanceToSquares(state, action, state.misses),
-        distanceToSquares(state, action, state.hits),
-        hitsOnALine(state, action),
-        chanceOfHittingShip(state, action)
-    ])
-
-    return results
 
 
 def distanceToSquares(state, action, squares):
