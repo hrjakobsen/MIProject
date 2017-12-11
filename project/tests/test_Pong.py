@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from project.games.pong import PongGame, makeMove, updateBall, NOTHING
+from project.games.pong import PongGame, makeMove, updateBall, getAngle, NOTHING
 
 
 class pongTest(TestCase):
@@ -113,4 +113,5 @@ class pongTest(TestCase):
         # Assert
         self.assertEqual(expected, result[1][1])
 
-    def
+
+
