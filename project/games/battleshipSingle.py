@@ -146,7 +146,8 @@ def calculateFeatures(state, action, player):
         distanceToHitOrMissSquare(state, action, player, state.misses),
         # distanceToHit(state, action, player),
         # distanceToMiss(state, action, player),
-        hitsOnALine(state, action, player)
+        hitsOnALine(state, action, player),
+        chanceOfHittingShip(state, action, player)
     ])
 
     return results
@@ -186,7 +187,7 @@ def hitsOnALine(state, action, player):
 """
 
 
-"""
+
  # 594 
 def hitsOnALine(state, action ,player):
     hitBoard = {}
@@ -219,8 +220,9 @@ def hitsOnALine(state, action ,player):
 
     actionValue = hitBoard.get(action, 0)
     return actionValue
-"""
 
+
+"""
 # 573
 def hitsOnALine(state, action ,player):
     hitBoard = {}
@@ -249,7 +251,7 @@ def hitsOnALine(state, action ,player):
 
     actionValue = hitBoard.get(action, 0)
     return actionValue
-
+"""
 
 """ # 528 
 def hitsOnALine(state, action, player):
@@ -272,3 +274,20 @@ def hitsOnALine(state, action, player):
 
     return hitBoard.get(action, 0)
     """
+
+def chanceOfHittingShip(state, action, player):
+    sizeOfShip = 5 # todo fix this?
+    count = 0
+    actionX, actionY = action
+    for xOffset in range(0, sizeOfShip + 1):
+        highX = actionX - xOffset + sizeOfShip
+        lowX  = actionX - xOffset
+        if 0 <= highX < state.boardSize and 0 <= lowX < state.boardSize:
+            count += 1
+
+    for yOffset in range(0, sizeOfShip + 1):
+            highY = actionY - yOffset + sizeOfShip
+            lowY  = actionY - yOffset
+            if 0 <= highY < state.boardSize and 0 <= lowY < state.boardSize:
+                count += 1
+    return count
