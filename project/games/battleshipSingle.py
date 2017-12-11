@@ -6,6 +6,7 @@ SHIP = 1
 WATERHIT = 2
 SHIPHIT = 3
 
+
 class BattleshipGame(object):
     def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
         self.boardSize = boardSize
@@ -76,7 +77,6 @@ class BattleshipGame(object):
             self.hits.append(action)
             self.numMoves -= 1
 
-            return
             for ship in self.shipStatus:
                 if (action, True) in ship:
                     ship[ship.index((action, True))] = (action, False)
@@ -89,6 +89,7 @@ class BattleshipGame(object):
                     if shipSunk:
                         for cell in ship:
                             self.removedShipSquares.append(cell[0])
+
 
 def randomBoard(boardSize, ships):
     board = np.zeros((boardSize, boardSize), dtype=int)
@@ -134,12 +135,13 @@ def randomBoard(boardSize, ships):
 
     return board, shipsList
 
+
 def getFeatures(player):
     return [
         lambda state, action: 1,
         lambda state, action: distanceToHit(state, action, player),
         lambda state, action: distanceToMiss(state, action, player),
-        lambda state, action:hitsOnALine(state, action, player)
+        lambda state, action: hitsOnALine(state, action, player)
     ]
 
 
@@ -148,12 +150,14 @@ def calculateFeatures(state, action, player):
         1,
         distanceToHitOrMissSquare(state, action, player, state.misses),
         distanceToHitOrMissSquare(state, action, player, state.hits),
-        #distanceToHit(state, action, player),
-        #distanceToMiss(state, action, player),
-        hitsOnALine(state, action, player)
+        # distanceToHit(state, action, player),
+        # distanceToMiss(state, action, player),
+        hitsOnALine(state, action, player),
+        chanceOfHittingShip(state, action, player)
     ])
 
     return results
+
 
 def distanceToHitOrMissSquare(state, action, player, squares):
     minDist = state.boardSize * 2
@@ -165,13 +169,8 @@ def distanceToHitOrMissSquare(state, action, player, squares):
 
     return (minDist - 1) / (state.boardSize * 2 - 1)
 
+""" # 610
 def hitsOnALine(state, action, player):
-    for hit in state.hits:
-        if action[0] == hit[0] or action[1] == hit[1]:
-            return 1
-
-    return 0
-
     if len(state.hits) >= 2:
         for hit in state.hits:
             for otherHit in state.hits:
@@ -191,4 +190,110 @@ def hitsOnALine(state, action, player):
                     return 1
 
     return 0
+"""
 
+
+
+ # 594 
+def hitsOnALine(state, action ,player):
+    hitBoard = {}
+    board = state.board
+
+    for hit in state.hits:
+        hx, hy = hit
+        # look left
+        for dx in range(hx, 0, -1):
+            if board[dx, hy] != SHIPHIT:
+                dist = abs(dx-hx)
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1/dist
+                break
+        # look right
+        for dx in range(hx, state.boardSize, 1):
+            if board[dx, hy] != SHIPHIT:
+                dist = abs(dx-hx)
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1/dist
+                break
+        for dy in range(hy, 0, -1):
+            if board[hx, dy] != SHIPHIT:
+                dist = abs(dy-hy)
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1/dist
+                break
+        for dy in range(hy, state.boardSize, 1):
+            if board[hx, dy] != SHIPHIT:
+                dist = abs(dy-hy)
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1/dist
+                break
+
+    actionValue = hitBoard.get(action, 0)
+    return actionValue
+
+
+"""
+# 573
+def hitsOnALine(state, action ,player):
+    hitBoard = {}
+    board = state.board
+
+    for hit in state.hits:
+        hx, hy = hit
+        # look left
+        for dx in range(hx, 0, -1):
+            if board[dx, hy] != SHIPHIT:
+                dist = abs(dx-hx)
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1/dist
+        # look right
+        for dx in range(hx, state.boardSize, 1):
+            if board[dx, hy] != SHIPHIT:
+                dist = abs(dx-hx)
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1/dist
+        for dy in range(hy, 0, -1):
+            if board[hx, dy] != SHIPHIT:
+                dist = abs(dy-hy)
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1/dist
+        for dy in range(hy, state.boardSize, 1):
+            if board[hx, dy] != SHIPHIT:
+                dist = abs(dy-hy)
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1/dist
+
+    actionValue = hitBoard.get(action, 0)
+    return actionValue
+"""
+
+""" # 528 
+def hitsOnALine(state, action, player):
+    hitBoard = {}
+    board = state.board
+    for hit in state.hits:
+        hx, hy = hit
+        for dx in range(hx, 0, -1):
+            if board[dx, hy] != SHIPHIT:
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1
+        for dx in range(hx, state.boardSize, 1):
+            if board[dx, hy] != SHIPHIT:
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1
+        for dy in range(hy, 0, -1):
+            if board[hx, dy] != SHIPHIT:
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1
+        for dy in range(hy, state.boardSize, 1):
+            if board[hx, dy] != SHIPHIT:
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1
+
+    return hitBoard.get(action, 0)
+    """
+
+def chanceOfHittingShip(state, action, player):
+    sizeOfShip = 5 # todo fix this?
+    count = 0
+    actionX, actionY = action
+    for xOffset in range(0, sizeOfShip + 1):
+        highX = actionX - xOffset + sizeOfShip
+        lowX  = actionX - xOffset
+        if 0 <= highX < state.boardSize and 0 <= lowX < state.boardSize:
+            count += 1
+
+    for yOffset in range(0, sizeOfShip + 1):
+            highY = actionY - yOffset + sizeOfShip
+            lowY  = actionY - yOffset
+            if 0 <= highY < state.boardSize and 0 <= lowY < state.boardSize:
+                count += 1
+    return count

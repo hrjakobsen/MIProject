@@ -1,3 +1,5 @@
+import math
+
 from agents.GreedyHexAgent import GreedyHexAgent
 from agents.QFunctionApproximator import QFunctionApproximator
 from games.hexagon import HexagonGame
@@ -9,7 +11,7 @@ import numpy as np
 import copy
 import time
 
-gameSizeModifier = 150
+gameSizeModifier = 50
 
 def makeMove(agent, game, player, epsilon):
     action = agent.getMove(game, game.getReward(player), game.getActions())
@@ -28,8 +30,8 @@ np.random.seed(0)
 g = HexagonGame(1, 1)
 
 numGames = 1
-width = 3
-height = 4
+width = 15
+height = 15
 
 def drawHexagon(game: HexagonGame, surface):
     for x in range(game.width):
@@ -58,11 +60,21 @@ def drawCell(surface, x, y, colour):
     else:
         foundColour = colours[6]
 
+    polygons = []
+    for i in range(6):
+        angle = (60 * i) * math.pi / 180
+        newX = math.cos(angle) * gameSizeModifier//2 + x*gameSizeModifier + gameSizeModifier // 2
+        newY = math.sin(angle) * gameSizeModifier//2 + y*gameSizeModifier + gameSizeModifier // 2 - (x % 2) * gameSizeModifier // 2
+        polygons.append((newX, newY))
+
+    pygame.draw.polygon(surface, foundColour, polygons)
+    """
     pygame.draw.circle(surface,
                        foundColour,
                        (int(x * gameSizeModifier + gameSizeModifier // 2),
                         int(y * gameSizeModifier + gameSizeModifier // 2 - (x % 2) * gameSizeModifier // 2)),
                        int(gameSizeModifier // 3))
+                       """
 
 
 def learnVisual(gameWidth, gameHeight, epsilon=0.001):
