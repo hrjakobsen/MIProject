@@ -17,3 +17,6 @@ class GreedyHexAgent(object):
                 bestA = a
                 maxCells = len(getOwnedCells(newBoard, self.player))
         return bestA
+
+    def getTrainedMove(self, state, actions):
+        return self.getMove(state, 0, actions)

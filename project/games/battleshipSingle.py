@@ -6,6 +6,7 @@ SHIP = 1
 WATERHIT = 2
 SHIPHIT = 3
 
+
 class BattleshipGame(object):
     def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
         self.p1Game = _BattleshipSingleGame(boardSize, ships)
@@ -39,6 +40,8 @@ class _BattleshipSingleGame(object):
         self.numHits = 0
         self.misses = []
         self.numFeatures = None
+        self.numMoves = 0
+        self.removedShipSquares = []
 
     def __deepcopy__(self, _):
         new = BattleshipGame(self.boardSize, self.ships)
@@ -68,14 +71,15 @@ class _BattleshipSingleGame(object):
 
     def getReward(self):
         if self.gameEnded():
-            numMoves = len(np.where(self.board > 1)[0])
-            return (self.numHits * 20) - numMoves
+            #numMoves = len(np.where(self.board > 1)[0])
+            return (self.numHits * 20) * (self.boardSize / self.numMoves)
 
         return 0
 
     def makeMove(self, action):
         self.board[action[0], action[1]] += 2
         self.actions.remove(action)
+        self.numMoves += 1
 
         if self.board[action[0], action[1]] == WATERHIT:
             self.misses.append(action)
@@ -83,6 +87,7 @@ class _BattleshipSingleGame(object):
         if self.board[action[0], action[1]] == SHIPHIT:
             self.numHits += 1
             self.hits.append(action)
+            self.numMoves -= 1
 
         return
         for ship in self.shipStatus:
@@ -97,6 +102,7 @@ class _BattleshipSingleGame(object):
                 if shipSunk:
                     for cell in ship:
                         self.hits.remove(cell[0])
+
 
 def randomBoard(boardSize, ships):
     board = np.zeros((boardSize, boardSize), dtype=int)
@@ -146,14 +152,16 @@ def randomBoard(boardSize, ships):
 def calculateFeatures(state, action):
     results = np.array([
         1,
-        distanceToHitOrMissSquare(state, action, state.hits),
-        distanceToHitOrMissSquare(state, action, state.misses),
-        hitsOnALine(state, action)
+        distanceToSquares(state, action, state.misses),
+        distanceToSquares(state, action, state.hits),
+        hitsOnALine(state, action),
+        chanceOfHittingShip(state, action)
     ])
 
     return results
 
-def distanceToHitOrMissSquare(state, action, squares):
+
+def distanceToSquares(state, action, squares):
     minDist = state.boardSize * 2
     for square in squares:
         # Manhattan distance
@@ -163,9 +171,117 @@ def distanceToHitOrMissSquare(state, action, squares):
 
     return (minDist - 1) / (state.boardSize * 2 - 1)
 
+""" 
+# 610
 def hitsOnALine(state, action):
     for hit in state.hits:
         if action[0] == hit[0] or action[1] == hit[1]:
             return 1
 
     return 0
+"""
+
+# 594
+def hitsOnALine(state, action):
+    hitBoard = {}
+    board = state.board
+
+    for hit in state.hits:
+        hx, hy = hit
+        # look left
+        for dx in range(hx, 0, -1):
+            if board[dx, hy] != SHIPHIT:
+                dist = abs(dx-hx)
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1/dist
+                break
+        # look right
+        for dx in range(hx, state.boardSize, 1):
+            if board[dx, hy] != SHIPHIT:
+                dist = abs(dx-hx)
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1/dist
+                break
+        for dy in range(hy, 0, -1):
+            if board[hx, dy] != SHIPHIT:
+                dist = abs(dy-hy)
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1/dist
+                break
+        for dy in range(hy, state.boardSize, 1):
+            if board[hx, dy] != SHIPHIT:
+                dist = abs(dy-hy)
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1/dist
+                break
+
+    actionValue = hitBoard.get(action, 0)
+    return actionValue
+
+
+"""
+# 573
+def hitsOnALine(state, action ,player):
+    hitBoard = {}
+    board = state.board
+
+    for hit in state.hits:
+        hx, hy = hit
+        # look left
+        for dx in range(hx, 0, -1):
+            if board[dx, hy] != SHIPHIT:
+                dist = abs(dx-hx)
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1/dist
+        # look right
+        for dx in range(hx, state.boardSize, 1):
+            if board[dx, hy] != SHIPHIT:
+                dist = abs(dx-hx)
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1/dist
+        for dy in range(hy, 0, -1):
+            if board[hx, dy] != SHIPHIT:
+                dist = abs(dy-hy)
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1/dist
+        for dy in range(hy, state.boardSize, 1):
+            if board[hx, dy] != SHIPHIT:
+                dist = abs(dy-hy)
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1/dist
+
+    actionValue = hitBoard.get(action, 0)
+    return actionValue
+"""
+
+""" 
+# 528 
+def hitsOnALine(state, action, player):
+    hitBoard = {}
+    board = state.board
+    for hit in state.hits:
+        hx, hy = hit
+        for dx in range(hx, 0, -1):
+            if board[dx, hy] != SHIPHIT:
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1
+        for dx in range(hx, state.boardSize, 1):
+            if board[dx, hy] != SHIPHIT:
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1
+        for dy in range(hy, 0, -1):
+            if board[hx, dy] != SHIPHIT:
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1
+        for dy in range(hy, state.boardSize, 1):
+            if board[hx, dy] != SHIPHIT:
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1
+
+    return hitBoard.get(action, 0)
+    """
+
+def chanceOfHittingShip(state, action):
+    sizeOfShip = 5 # todo fix this?
+    count = 0
+    actionX, actionY = action
+    for xOffset in range(0, sizeOfShip + 1):
+        highX = actionX - xOffset + sizeOfShip
+        lowX  = actionX - xOffset
+        if 0 <= highX < state.boardSize and 0 <= lowX < state.boardSize:
+            count += 1
+
+    for yOffset in range(0, sizeOfShip + 1):
+            highY = actionY - yOffset + sizeOfShip
+            lowY  = actionY - yOffset
+            if 0 <= highY < state.boardSize and 0 <= lowY < state.boardSize:
+                count += 1
+    return count

@@ -10,12 +10,13 @@ pongWidth = 100
 pongHeight= 50
 
 class PongGame(object):
-    def __init__(self, ballVelocity=None):
+    def __init__(self, ballVelocity=None, ballPosition=np.array([pongWidth // 2, pongHeight// 2])):
         self.width = pongWidth
         self.height = pongHeight
         self.p1pos = self.height // 2
         self.p2pos = self.height // 2
         self.actions = [NOTHING, UP, DOWN]
+        self.ballVelocity = ballVelocity
         if ballVelocity is None:
             direction = np.random.randint(180)
             if direction < 90:
@@ -26,12 +27,14 @@ class PongGame(object):
             dirRad = direction * math.pi / 180
             self.ballVelocity = np.array([math.cos(dirRad), math.sin(dirRad)])
 
-        self.ballPosition = np.array([self.width // 2, self.height // 2])
+        self.ballPosition = ballPosition
         self.ballRadius = 2.5
         self.paddleSpeed = 0.5
         self.paddleHeight = 20
         self.winner = None
         self.numFeatures = None
+        self.lastP1Action = None
+        self.lastP2Action = None
 
     def __deepcopy__(self, _):
         new = PongGame(self.ballVelocity)
@@ -58,6 +61,20 @@ class PongGame(object):
     def getReward(self, player):
         return getReward(self, player)
 
+    def makeMove(self, player, action):
+        if (player == 1 and self.lastP1Action is not None) or (player == 2 and self.lastP2Action is not None):
+            raise ValueError("Player {} cannot make two actions in a row".format(player))
+        if player == 1:
+            self.lastP1Action = action
+        else:
+            self.lastP2Action = action
+
+        if self.lastP1Action is None or self.lastP2Action is None:
+            return self
+
+        newgame = makeMove(self, self.lastP1Action, self.lastP2Action)
+        self.lastP1Action, self.lastP2Action = None, None
+        return newgame
 
 
 def updateBall(state: PongGame):

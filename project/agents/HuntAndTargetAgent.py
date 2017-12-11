@@ -1,11 +1,17 @@
 #from games.hexagon import HexagonGame
+from games.battleshipSingle import BattleshipGame
 import numpy as np
 
 class HuntAndTargetAgent(object):
     def __init__(self, boardsize):
         self.boardsize = boardsize
 
-    def getMove(self, state, reward, actions):
+    def getMove(self, state: BattleshipGame, reward, actions):
+        hits = state.hits
+        #if hits != []:
+        #    for shipSquare in state.removedShipSquares:
+        #        hits.remove(shipSquare)
+        #        state.removedShipSquares.remove(shipSquare)
         """
         Ask the agent what action to take
         :param state: the current game
@@ -14,8 +20,8 @@ class HuntAndTargetAgent(object):
         :return: the action to play in this state
         """
         #print(state.hits)
-        for hit in state.hits:
-            for otherHit in state.hits:
+        for hit in hits:
+            for otherHit in hits:
                 action = None
                 if hit == otherHit:
                     continue
@@ -49,8 +55,8 @@ class HuntAndTargetAgent(object):
                         return action
 
         #if we don't have two hits next to each other, check if we at least got 1 hit, then shoot next to it
-        if state.hits != []:
-            hit = state.hits[0]
+        if hits != []:
+            hit = hits[0]
             for availableAction in actions:
                 if availableAction == (hit[0]-1, hit[1]):
                     return availableAction
