@@ -6,8 +6,11 @@ SHIP = 1
 WATERHIT = 2
 SHIPHIT = 3
 
+
 class BattleshipGame(object):
     def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
+        self.boardSize = boardSize
+        self.ships = ships
         self.p1Game = _BattleshipSingleGame(boardSize, ships)
         self.p2Game = _BattleshipSingleGame(boardSize, ships)
         self.numFeatures = None
@@ -17,6 +20,7 @@ class BattleshipGame(object):
         new.p1Game = copy.deepcopy(self.p1Game)
         new.p2Game = copy.deepcopy(self.p2Game)
         new.numFeatures = self.numFeatures
+        return new
 
     def getActions(self, player):
         # Actions available on the opponent's board
@@ -50,15 +54,17 @@ class _BattleshipSingleGame(object):
         self.numFeatures = None
         self.numMoves = 0
         self.removedShipSquares = []
+        self.getActions()
 
     def __deepcopy__(self, _):
-        new = BattleshipGame(self.boardSize, self.ships)
+        new = _BattleshipSingleGame(self.boardSize, self.ships)
         new.board = self.board.copy()
         new.shipStatus = copy.deepcopy(self.shipStatus)
         new.hits = self.hits.copy()
         new.numHits = self.numHits
         new.misses = self.misses.copy()
         new.numFeatures = self.numFeatures
+        new.actions = self.actions
         return new
 
     def getActions(self):
