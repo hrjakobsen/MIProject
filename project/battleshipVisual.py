@@ -144,4 +144,3 @@ agents[0].weights[1] = -4
 agents[0].weights[2] = 2
 agents[0].weights[3] = 2
 learnVisual(agents, numTrain, trainBoardSize, trainShips, 0)
-

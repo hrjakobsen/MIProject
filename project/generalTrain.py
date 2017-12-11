@@ -1,35 +1,66 @@
 from games.battleshipSingle import BattleshipGame
+from games.hexagon import HexagonGame
+from games.pong import PongGame
 from agents.QFunctionApproximator import QFunctionApproximator
-#import matplotlib.pyplot as plt
 import copy
 import numpy as np
 
 
-def train(agent, numGames, numRepeatGames, boardSize, ships, epsilon):
+def train(p1, p2, numGames, numRepeatGames, epsilon, gameFunction):
     interval = numGames / 100
+    p2Start = False
 
     for x in range(numGames):
         if x % numRepeatGames == 0:
-            startGame = BattleshipGame(boardSize, ships)
-
+            startGame = gameFunction()
         game = copy.deepcopy(startGame)
 
-        while not game.gameEnded():
-            makeMove(agent, game, 1, epsilon)
+        if p2Start:
+            makeMove(p2, game, 2, epsilon)
 
-        agent.finalize(game, game.getReward(1), None)
+        while not game.gameEnded():
+            makeMove(p1, game, 1, epsilon)
+            if game.gameEnded():
+                break
+
+            makeMove(p2, game, 2, epsilon)
+
+        p1.finalize(game, game.getReward(1), game.getActions())
+        p2.finalize(game, game.getReward(2), game.getActions())
+
+        p2Start = not p2Start
 
         if x % interval == 0:
-            print("\rTrained %s/%s games %s" % (x, numGames, agent.weights), end="")
+            print("\rTrained %s/%s games" % (x, numGames), end="")
     print()
 
 
-def play(agent, numGames, boardSize, ships):
+def play(p1, p2, numGames, gameFunction):
     rewards = []
     interval = numGames / 100
 
+    p2Start = False
+
     for x in range(numGames):
-        game = BattleshipGame(boardSize, ships)
+        game = gameFunction()
+
+        if p2Start:
+            makeMove(p2, game, 2, 0)
+
+        while not game.gameEnded():
+            makeMove(p1, game, 1, epsilon)
+            if game.gameEnded():
+                break
+
+            makeMove(p2, game, 2, epsilon)
+
+        p1.finalize(game, game.getReward(1), game.getActions())
+        p2.finalize(game, game.getReward(2), game.getActions())
+
+        p2Start = not p2Start
+
+    for x in range(numGames):
+        game = gameFunction()
 
         while not game.gameEnded():
             game.makeMove(1, agent.getTrainedMove(game, game.getActions(1)))
@@ -41,6 +72,16 @@ def play(agent, numGames, boardSize, ships):
     print()
 
     return rewards
+
+
+def makeMove(agent, game, player, epsilon):
+    actions = game.getActions(player)
+    action = agent.getMove(game, game.getReward(player), actions)
+    if np.random.rand() < epsilon:
+        action = actions[np.random.randint(len(actions))]
+        agent.s = None
+    game.makeMove(player, action)
+
 
 def makeMove(agent, game, player, epsilon):
     actions = game.getActions(player)
@@ -59,12 +100,11 @@ trainBoardSize = 6
 trainShips = [2, 3, 4]
 
 numPlay = 100
-playBoardSize = 6
-playShips = [2, 3]#, 3, 4, 5]
+playBoardSize = trainBoardSize#10
+playShips = trainShips#[2, 3, 3, 4, 5]
 
-np.random.seed(0)
 g = BattleshipGame(trainBoardSize, trainShips)
-agent1 = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.9, alpha=0.1, minWeight=0, maxWeight=0)
+agent1 = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=1, decay=0.95, alpha=0.1, minWeight=0, maxWeight=0)
 
 np.random.seed(0)
 outcomes = play(agent1, numPlay, playBoardSize, playShips)

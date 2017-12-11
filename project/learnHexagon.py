@@ -56,13 +56,13 @@ def makeMove(agent, game, player, epsilon):
 np.set_printoptions(suppress=True, precision=2)
 np.random.seed(0)
 
-numGames = 50000#0000
-width = 3
-height = 3
+numGames = 5000#0000
+width = 5
+height = 5
 
 g = HexagonGame(width, height)
-agent1 = TabularQLearner.load(1)#TabularQLearner(g.getActions(), {}, {}, 1)
-agent2 = RandomAgent()
+agent1 = QFunctionApproximator(1, g.getNumFeatures(), batchSize=100, gamma=1, decay=0.99, alpha=0.1, minWeight=0, maxWeight=0)
+agent2 = GreedyHexAgent(2)
 
 startTime = time.time()
 outcomes = learn(agent1, agent2, numGames, 0.5, width, height)
@@ -77,16 +77,3 @@ for i in range(len(outcomes)):
     if outcomes[i] == 1:
         wonGames += 1
     p1Wins.append(wonGames)
-
-#print(p1Wins)
-
-agent1.save(1)
-print(len(agent1.Q))
-
-#plt.plot(p1Wins)
-#plt.show()
-
-#num_bins = numGames // 100
-#n, bins, patches = ax.hist(p1Wins, num_bins, normed=0, histtype='step', cumulative=True)
-#n, bins, patches = ax.hist(p1Wins, num_bins, normed=0)
-

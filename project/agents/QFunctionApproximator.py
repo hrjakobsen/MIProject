@@ -10,18 +10,18 @@ class QFunctionApproximator(object):
         self.batches = 0
         self.batchSize = batchSize
         self.gamma = gamma
-        self.mu = 0.999
+        self.alpha = alpha
         self.q = None
 
         # Momentum
         self.velocity = np.zeros(numFeatures)
+        self.mu = 0.999
 
         # Cache for Adagrad and RMSprop
         self.g = np.zeros(numFeatures)
 
         # RMSprop
         self.decay = decay
-        self.alpha = alpha
 
     def Q(self, state, action):
         return np.sum(np.dot(state.calculateFeatures(state, action, self.player), self.weights))
@@ -56,13 +56,21 @@ class QFunctionApproximator(object):
             for j in range(self.numFeatures):
                 gradient = gradients[j] / self.batchSize
 
-                self.g[j] = (self.decay * self.g[j]) + ((1 - self.decay) * gradient ** 2)
+                # Vanilla
+                # newWeights[j] -= self.alpha * gradient
+
+                # Momentum
+                # self.velocity[j] = self.mu * self.velocity[j] + gradient
+                # newWeights[j] -= self.alpha * self.velocity[j]
+
+                # ADAGRAD
+                self.g[j] += gradient ** 2
                 newWeights[j] -= self.alpha * gradient / (np.sqrt(self.g[j]) + 0.0000001)
 
-                #self.velocity[j] = self.mu * self.velocity[j] + gradient
-                #newWeights[j] -= self.alpha * self.velocity[j]
+                # RMSProp
+                # self.g[j] = (self.decay * self.g[j]) + ((1 - self.decay) * gradient ** 2)
+                # newWeights[j] -= self.alpha * gradient / (np.sqrt(self.g[j]) + 0.0000001)
 
-                #newWeights[j] += self.alpha * gradient
             self.weights = newWeights
             self.batch = []
 

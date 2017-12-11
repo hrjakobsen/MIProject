@@ -8,6 +8,29 @@ SHIPHIT = 3
 
 class BattleshipGame(object):
     def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
+        self.p1Game = _BattleshipSingleGame(boardSize, ships)
+        self.p2Game = _BattleshipSingleGame(boardSize, ships)
+        self.numFeatures = None
+
+    def getActions(self, player):
+        # Actions available on the opponent's board
+        return self.p2Game.getActions() if player == 1 else self.p1Game.getActions()
+
+    def gameEnded(self):
+        return self.p1Game.gameEnded() or self.p2Game.gameEnded()
+
+    def calculateFeatures(self, state, action, player):
+        return self.p2Game.calculateFeatures(state, action) if player == 1 else self.p1Game.calculateFeatures(state, action)
+
+    def getReward(self, player):
+        return self.p2Game.getReward() if player == 1 else self.p1Game.getReward()
+
+    def makeMove(self, player, action):
+        return self.p2Game.makeMove(action) if player == 1 else self.p1Game.makeMove(action)
+
+
+class _BattleshipSingleGame(object):
+    def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
         self.boardSize = boardSize
         self.actions = None
         self.ships = ships
@@ -17,7 +40,17 @@ class BattleshipGame(object):
         self.misses = []
         self.numFeatures = None
 
-    def getActions(self, player):
+    def __deepcopy__(self, _):
+        new = BattleshipGame(self.boardSize, self.ships)
+        new.board = self.board.copy()
+        new.shipStatus = copy.deepcopy(self.shipStatus)
+        new.hits = self.hits.copy()
+        new.numHits = self.numHits
+        new.misses = self.misses.copy()
+        new.numFeatures = self.numFeatures
+        return new
+
+    def getActions(self):
         if self.actions is None:
             actions = []
             for (x, y), value in np.ndenumerate(self.board):
@@ -30,36 +63,17 @@ class BattleshipGame(object):
     def gameEnded(self):
         return not np.any(self.board == SHIP)
 
-    def getFeatures(self, player):
-        return getFeatures(player)
+    def calculateFeatures(self, state, action):
+        return calculateFeatures(state, action)
 
-    def getNumFeatures(self):
-        if self.numFeatures is None:
-            self.numFeatures = len(calculateFeatures(self, (0, 0), 1))
-
-        return self.numFeatures
-
-    def calculateFeatures(self, state, action, player):
-        return calculateFeatures(state, action, player)
-
-    def getReward(self, player):
+    def getReward(self):
         if self.gameEnded():
             numMoves = len(np.where(self.board > 1)[0])
             return (self.numHits * 20) - numMoves
 
         return 0
 
-    def __deepcopy__(self, _):
-        new = BattleshipGame(self.boardSize, self.ships)
-        new.board = self.board.copy()
-        new.shipStatus = copy.deepcopy(self.shipStatus)
-        new.hits = self.hits.copy()
-        new.numHits = self.numHits
-        new.misses = self.misses.copy()
-        new.numFeatures = self.numFeatures
-        return new
-
-    def makeMove(self, player, action):
+    def makeMove(self, action):
         self.board[action[0], action[1]] += 2
         self.actions.remove(action)
 
@@ -70,19 +84,19 @@ class BattleshipGame(object):
             self.numHits += 1
             self.hits.append(action)
 
-            return
-            for ship in self.shipStatus:
-                if (action, True) in ship:
-                    ship[ship.index((action, True))] = (action, False)
-                    shipSunk = True
-                    for cell in ship:
-                        if cell[1]:
-                            shipSunk = False
-                            break
+        return
+        for ship in self.shipStatus:
+            if (action, True) in ship:
+                ship[ship.index((action, True))] = (action, False)
+                shipSunk = True
+                for cell in ship:
+                    if cell[1]:
+                        shipSunk = False
+                        break
 
-                    if shipSunk:
-                        for cell in ship:
-                            self.hits.remove(cell[0])
+                if shipSunk:
+                    for cell in ship:
+                        self.hits.remove(cell[0])
 
 def randomBoard(boardSize, ships):
     board = np.zeros((boardSize, boardSize), dtype=int)
@@ -128,28 +142,18 @@ def randomBoard(boardSize, ships):
 
     return board, shipsList
 
-def getFeatures(player):
-    return [
-        lambda state, action: 1,
-        lambda state, action: distanceToHit(state, action, player),
-        lambda state, action: distanceToMiss(state, action, player),
-        lambda state, action:hitsOnALine(state, action, player)
-    ]
 
-
-def calculateFeatures(state, action, player):
+def calculateFeatures(state, action):
     results = np.array([
         1,
-        distanceToHitOrMissSquare(state, action, player, state.hits),
-        distanceToHitOrMissSquare(state, action, player, state.misses),
-        #distanceToHit(state, action, player),
-        #distanceToMiss(state, action, player),
-        hitsOnALine(state, action, player)
+        distanceToHitOrMissSquare(state, action, state.hits),
+        distanceToHitOrMissSquare(state, action, state.misses),
+        hitsOnALine(state, action)
     ])
 
     return results
 
-def distanceToHitOrMissSquare(state, action, player, squares):
+def distanceToHitOrMissSquare(state, action, squares):
     minDist = state.boardSize * 2
     for square in squares:
         # Manhattan distance
@@ -159,30 +163,9 @@ def distanceToHitOrMissSquare(state, action, player, squares):
 
     return (minDist - 1) / (state.boardSize * 2 - 1)
 
-def hitsOnALine(state, action, player):
+def hitsOnALine(state, action):
     for hit in state.hits:
         if action[0] == hit[0] or action[1] == hit[1]:
             return 1
 
     return 0
-
-    if len(state.hits) >= 2:
-        for hit in state.hits:
-            for otherHit in state.hits:
-                dRow = hit[0] - otherHit[0]
-                dCol = hit[1] - otherHit[1]
-
-                if dRow == 0 and (dCol == 1 or dCol == -1):
-                    newAction1 = (hit[0], otherHit[1] + 1)
-                    newAction2 = (hit[0], hit[1] - 1)
-                elif (dRow == 1 or dRow == -1) and dCol == 0:
-                    newAction1 = (hit[0] + 1, hit[1])
-                    newAction2 = (otherHit[0] - 1, hit[1])
-                else:
-                    continue
-
-                if newAction1 == action or newAction2 == action:
-                    return 1
-
-    return 0
-
