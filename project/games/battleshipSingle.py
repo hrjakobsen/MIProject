@@ -186,7 +186,8 @@ def hitsOnALine(state, action, player):
 """
 
 
-""" # 594 
+"""
+ # 594 
 def hitsOnALine(state, action ,player):
     hitBoard = {}
     board = state.board
@@ -218,10 +219,37 @@ def hitsOnALine(state, action ,player):
 
     actionValue = hitBoard.get(action, 0)
     return actionValue
-
-
-
 """
+
+# 573
+def hitsOnALine(state, action ,player):
+    hitBoard = {}
+    board = state.board
+
+    for hit in state.hits:
+        hx, hy = hit
+        # look left
+        for dx in range(hx, 0, -1):
+            if board[dx, hy] != SHIPHIT:
+                dist = abs(dx-hx)
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1/dist
+        # look right
+        for dx in range(hx, state.boardSize, 1):
+            if board[dx, hy] != SHIPHIT:
+                dist = abs(dx-hx)
+                hitBoard[dx, hy] = hitBoard.get((dx, hy), 0) + 1/dist
+        for dy in range(hy, 0, -1):
+            if board[hx, dy] != SHIPHIT:
+                dist = abs(dy-hy)
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1/dist
+        for dy in range(hy, state.boardSize, 1):
+            if board[hx, dy] != SHIPHIT:
+                dist = abs(dy-hy)
+                hitBoard[hx, dy] = hitBoard.get((hx, dy), 0) + 1/dist
+
+    actionValue = hitBoard.get(action, 0)
+    return actionValue
+
 
 """ # 528 
 def hitsOnALine(state, action, player):
