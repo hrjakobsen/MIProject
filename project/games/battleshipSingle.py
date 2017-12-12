@@ -62,6 +62,7 @@ class _BattleshipSingleGame(object):
         self.numFeatures = None
         self.numMoves = 0
         self.removedShipSquares = []
+        self.getActions()
 
     def __deepcopy__(self, _):
         new = _BattleshipSingleGame(self.boardSize, self.ships)
@@ -71,6 +72,7 @@ class _BattleshipSingleGame(object):
         new.numHits = self.numHits
         new.misses = self.misses.copy()
         new.numFeatures = self.numFeatures
+        new.getActions()
         return new
 
     def getActions(self):
