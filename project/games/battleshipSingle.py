@@ -1,13 +1,13 @@
+from Interfaces import IGame
+from interface import implements
 import numpy as np
 import copy
 
-WATER = 0
-SHIP = 1
-WATERHIT = 2
-SHIPHIT = 3
 
-class BattleshipGame(object):
+class BattleshipGame(implements(IGame)):
     def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
+        self.boardSize = boardSize
+        self.ships = ships
         self.p1Game = _BattleshipSingleGame(boardSize, ships)
         self.p2Game = _BattleshipSingleGame(boardSize, ships)
         self.numFeatures = None
@@ -17,16 +17,22 @@ class BattleshipGame(object):
         new.p1Game = copy.deepcopy(self.p1Game)
         new.p2Game = copy.deepcopy(self.p2Game)
         new.numFeatures = self.numFeatures
+        return new
 
     def getActions(self, player):
         # Actions available on the opponent's board
         return self.p2Game.getActions() if player == 1 else self.p1Game.getActions()
 
+    def getNumFeatures(self):
+        if self.numFeatures is None:
+            self.numFeatures = len(self.p1Game.calculateFeatures((0, 0)))
+        return self.numFeatures
+
+    def getFeatures(self, player, action):
+        return self.p2Game.calculateFeatures(action) if player == 1 else self.p1Game.calculateFeatures(action)
+
     def gameEnded(self):
         return self.p1Game.gameEnded() or self.p2Game.gameEnded()
-
-    def calculateFeatures(self, state, action, player):
-        return self.p2Game.calculateFeatures(state, action) if player == 1 else self.p1Game.calculateFeatures(state, action)
 
     def getReward(self, player):
         return self.p2Game.getReward() if player == 1 else self.p1Game.getReward()
@@ -36,6 +42,12 @@ class BattleshipGame(object):
             self.p2Game.makeMove(action)
         else:
             self.p1Game.makeMove(action)
+
+
+WATER = 0
+SHIP = 1
+WATERHIT = 2
+SHIPHIT = 3
 
 
 class _BattleshipSingleGame(object):
@@ -52,7 +64,7 @@ class _BattleshipSingleGame(object):
         self.removedShipSquares = []
 
     def __deepcopy__(self, _):
-        new = BattleshipGame(self.boardSize, self.ships)
+        new = _BattleshipSingleGame(self.boardSize, self.ships)
         new.board = self.board.copy()
         new.shipStatus = copy.deepcopy(self.shipStatus)
         new.hits = self.hits.copy()
@@ -74,20 +86,19 @@ class _BattleshipSingleGame(object):
     def gameEnded(self):
         return not np.any(self.board == SHIP)
 
-    def calculateFeatures(self, state, action):
+    def calculateFeatures(self, action):
         results = np.array([
             1,
-            distanceToSquares(state, action, state.misses),
-            distanceToSquares(state, action, state.hits),
-            hitsOnALine(state, action),
-            chanceOfHittingShip(state, action)
+            distanceToSquares(self, action, self.misses),
+            distanceToSquares(self, action, self.hits),
+            hitsOnALine(self, action),
+            #chanceOfHittingShip(state, action)
         ])
 
         return results
 
     def getReward(self):
         if self.gameEnded():
-            #numMoves = len(np.where(self.board > 1)[0])
             return (self.numHits * 20) * (self.boardSize / self.numMoves)
 
         return 0
@@ -104,20 +115,6 @@ class _BattleshipSingleGame(object):
             self.numHits += 1
             self.hits.append(action)
             self.numMoves -= 1
-
-        return
-        for ship in self.shipStatus:
-            if (action, True) in ship:
-                ship[ship.index((action, True))] = (action, False)
-                shipSunk = True
-                for cell in ship:
-                    if cell[1]:
-                        shipSunk = False
-                        break
-
-                if shipSunk:
-                    for cell in ship:
-                        self.hits.remove(cell[0])
 
 
 def randomBoard(boardSize, ships):
@@ -175,7 +172,7 @@ def distanceToSquares(state, action, squares):
 
     return (minDist - 1) / (state.boardSize * 2 - 1)
 
-""" 
+
 # 610
 def hitsOnALine(state, action):
     for hit in state.hits:
@@ -183,8 +180,8 @@ def hitsOnALine(state, action):
             return 1
 
     return 0
-"""
 
+"""
 # 594
 def hitsOnALine(state, action):
     hitBoard = {}
@@ -217,7 +214,7 @@ def hitsOnALine(state, action):
 
     actionValue = hitBoard.get(action, 0)
     return actionValue
-
+"""
 
 """
 # 573

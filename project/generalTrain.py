@@ -8,27 +8,23 @@ import numpy as np
 
 def train(p1, p2, numGames, numRepeatGames, epsilon, gameFunction):
     interval = numGames / 100
-    p2Start = False
+    p1Turn = True
 
     for x in range(numGames):
         if x % numRepeatGames == 0:
             startGame = gameFunction()
         game = copy.deepcopy(startGame)
 
-        if p2Start:
-            makeMove(p2, game, 2, epsilon)
-
         while not game.gameEnded():
-            makeMove(p1, game, 1, epsilon)
-            if game.gameEnded():
-                break
+            if p1Turn:
+                makeMove(p2, game, 2, epsilon)
+            else:
+                makeMove(p1, game, 1, epsilon)
 
-            makeMove(p2, game, 2, epsilon)
+            p1Turn = not p1Turn
 
         p1.finalize(game, game.getReward(1), game.getActions())
         p2.finalize(game, game.getReward(2), game.getActions())
-
-        p2Start = not p2Start
 
         if x % interval == 0:
             print("\rTrained %s/%s games" % (x, numGames), end="")

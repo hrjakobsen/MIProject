@@ -1,6 +1,5 @@
 from games.battleshipSingle import BattleshipGame
 from agents.QFunctionApproximator import QFunctionApproximator
-#import matplotlib.pyplot as plt
 import copy
 import numpy as np
 
@@ -17,7 +16,7 @@ def train(agent, numGames, numRepeatGames, boardSize, ships, epsilon):
         while not game.gameEnded():
             makeMove(agent, game, 1, epsilon)
 
-        agent.finalize(game, game.getReward(1), None)
+        agent.finalize(game, game.getReward(1))
 
         if x % interval == 0:
             print("\rTrained %s/%s games %s" % (x, numGames, agent.weights), end="")
@@ -32,7 +31,7 @@ def play(agent, numGames, boardSize, ships):
         game = BattleshipGame(boardSize, ships)
 
         while not game.gameEnded():
-            game.makeMove(1, agent.getTrainedMove(game, game.getActions(1)))
+            game.makeMove(1, agent.getTrainedMove(game))
 
         rewards.append(game.getReward(1))
 
@@ -43,9 +42,9 @@ def play(agent, numGames, boardSize, ships):
     return rewards
 
 def makeMove(agent, game, player, epsilon):
-    actions = game.getActions(player)
-    action = agent.getMove(game, game.getReward(player), actions)
+    action = agent.getMove(game, game.getReward(player))
     if np.random.rand() < epsilon:
+        actions = game.getActions(player)
         action = actions[np.random.randint(len(actions))]
         agent.s = None
     game.makeMove(player, action)
@@ -64,14 +63,12 @@ playShips = [2, 3]#, 3, 4, 5]
 
 np.random.seed(0)
 g = BattleshipGame(trainBoardSize, trainShips)
-agent1 = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.9, alpha=0.1, minWeight=0, maxWeight=0)
+agent1 = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=0.9, decay=0.9, alpha=0.001, minWeight=0, maxWeight=0)
 
 np.random.seed(0)
 outcomes = play(agent1, numPlay, playBoardSize, playShips)
 moves = [sum(playShips) * 20 - outcome for outcome in outcomes]
 print("Average score: {0}/{1} | Average moves: {2}/{3}".format(np.mean(outcomes), sum(playShips) * 19, np.mean(moves), sum(playShips)))
-#plt.plot(outcomes)
-#plt.show()
 
 train(agent1, numTrain, numRepeatGames, trainBoardSize, trainShips, 0.1)
 
@@ -79,5 +76,3 @@ np.random.seed(0)
 outcomes = play(agent1, numPlay, playBoardSize, playShips)
 moves = [sum(playShips) * 20 - outcome for outcome in outcomes]
 print("Average score: {0}/{1} | Average moves: {2}/{3}".format(np.mean(outcomes), sum(playShips) * 19, np.mean(moves), sum(playShips)))#plt.plot(outcomes)
-#plt.plot(outcomes)
-#plt.show()
