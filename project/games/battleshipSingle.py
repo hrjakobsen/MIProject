@@ -174,7 +174,7 @@ def distanceToSquares(state, action, squares):
 
     return (minDist - 1) / (state.boardSize * 2 - 1)
 
-
+"""
 # 610
 def hitsOnALine(state, action):
     for hit in state.hits:
@@ -182,6 +182,7 @@ def hitsOnALine(state, action):
             return 1
 
     return 0
+"""
 
 """
 # 594
@@ -271,6 +272,15 @@ def hitsOnALine(state, action, player):
 
     return hitBoard.get(action, 0)
     """
+
+def hitsOnALine(state, action):
+    actionX, actionY = action
+    result = 0
+    for hit in state.hits:
+        hitX, hitY = hit
+        if hitX == actionX or hitY == actionY:
+            result += 1 / (abs(hitX - actionX) + abs(hitY - actionY))
+    return result
 
 def chanceOfHittingShip(state, action):
     sizeOfShip = 5 # todo fix this?

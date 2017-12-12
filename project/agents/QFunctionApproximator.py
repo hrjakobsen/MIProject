@@ -31,11 +31,11 @@ class QFunctionApproximator(implements(IAgent)):
         return np.sum(np.dot(state.getFeatures(self.player, action), self.weights))
 
     def getMove(self, state, reward):
-        actions = state.getActions(1)
+        actions = state.getActions(self.player)
 
         self.updateBatch(state, reward, actions)
 
-        self.s = state
+        self.s = copy.deepcopy(state)
         self.a = actions[argmax([self.Q(state, aP) for aP in actions])]
 
         return self.a
@@ -51,7 +51,7 @@ class QFunctionApproximator(implements(IAgent)):
             else:
                 q = (1 - self.alpha) * self.Q(self.s, self.a) + self.alpha * (reward + self.gamma * max([self.Q(state, aP) for aP in actions]))
 
-            self.batch.append((copy.deepcopy(self.s), self.a, q))
+            self.batch.append((self.s, self.a, q))
 
         if len(self.batch) == self.batchSize:
             # Update weights
