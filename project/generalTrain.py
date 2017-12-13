@@ -93,7 +93,7 @@ def makeMove(agent, game, player, epsilon):
 
 np.set_printoptions(suppress=True, precision=8)
 
-game = HEXAGRID
+game = PONG
 numTrain = 1000
 numPlay = 100
 numRepeatGames = 5
