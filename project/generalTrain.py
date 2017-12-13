@@ -50,6 +50,10 @@ def play(p1, p2, numGames, gameFunction, seed=0, visualise=False):
 
     for x in range(numGames):
         game = gameFunction()
+        pygame.display.set_caption("Player 1: {} | Player 2: {} | Draws: {}".format(len([g for g in winners if g == 1]),
+                                                                                    len([g for g in winners if g == 2]),
+                                                                                    len([g for g in winners if
+                                                                                         g == -1])))
 
         while not game.gameEnded():
             if visualise:
@@ -93,14 +97,14 @@ def makeMove(agent, game, player, epsilon):
 
 np.set_printoptions(suppress=True, precision=8)
 
-game = PONG
+game = BATTLESHIP
 numTrain = 1000
 numPlay = 100
 numRepeatGames = 5
 
 if game == BATTLESHIP:
-    boardSize = 6
-    ships = [2, 3, 4]
+    boardSize = 10
+    ships = [2, 3, 3, 4, 5]
     gameFunc = lambda: Battleship(boardSize, ships)
     agent2 = Random(2)
 
@@ -119,7 +123,7 @@ if game == PONG:
 
 g = gameFunc()
 agent1 = QFunctionSGD(1, g.getNumFeatures(), batchSize=100, gamma=1, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
-agent2 = QFunctionSGD(2, g.getNumFeatures(), batchSize=100, gamma=1, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
+#agent2 = QFunctionSGD(2, g.getNumFeatures(), batchSize=100, gamma=1, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
 
 outcomes = play(agent1, agent2, numPlay, gameFunc, seed=0, visualise=True)
 p1Wins = (len([g for g in outcomes if g == 1]))

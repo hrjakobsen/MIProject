@@ -110,7 +110,7 @@ class Pong(implements(IGame)):
         # Ball
         bX, bY = self.ballPosition * sizeModifier
         pygame.draw.circle(surface, BALLCOLOR, (int(bX + PADDLEWIDTH), int(bY)), int(self.ballRadius * sizeModifier))
-        pygame.time.delay(16)
+        pygame.time.delay(6)
 
 
 def updateBall(state):

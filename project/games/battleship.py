@@ -125,8 +125,7 @@ class _BattleshipSingleGame(object):
             1,
             distanceToSquares(self, action, self.misses),
             distanceToSquares(self, action, self.hits),
-            hitsOnALine(self, action),
-            #chanceOfHittingShip(state, action)
+            hitsOnALine(self, action)
         ])
 
         return results
@@ -254,22 +253,3 @@ def hitsOnALine(state, action):
             count += 1
 
     return (count - 0) / (state.boardSize - 2)
-    return count
-
-
-def chanceOfHittingShip(state, action):
-    sizeOfShip = 5
-    count = 0
-    actionX, actionY = action
-    for xOffset in range(0, sizeOfShip + 1):
-        highX = actionX - xOffset + sizeOfShip
-        lowX = actionX - xOffset
-        if 0 <= highX < state.boardSize and 0 <= lowX < state.boardSize:
-            count += 1
-
-    for yOffset in range(0, sizeOfShip + 1):
-            highY = actionY - yOffset + sizeOfShip
-            lowY = actionY - yOffset
-            if 0 <= highY < state.boardSize and 0 <= lowY < state.boardSize:
-                count += 1
-    return count
