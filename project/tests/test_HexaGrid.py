@@ -1,8 +1,7 @@
+import numpy as np
+from games.hexaGrid import HexaGrid
 from unittest import TestCase
 
-import numpy as np
-
-from games.hexagon import HexagonGame
 
 initialBoard = np.array(
     [
@@ -13,9 +12,10 @@ initialBoard = np.array(
     ]
 )
 
+
 class hexagonTest(TestCase):
     def testColorsTakenWithAction(self):
-        game = HexagonGame(5, 3)
+        game = HexaGrid(5, 3)
         game.board = initialBoard
         expected = np.array(
             [
@@ -31,7 +31,7 @@ class hexagonTest(TestCase):
         np.testing.assert_array_equal(expected, game.board)
 
     def testGameContinuesAfterMove(self):
-        game = HexagonGame(5, 3)
+        game = HexaGrid(5, 3)
         game.board = initialBoard
 
         game.makeMove(1, 3)
@@ -39,7 +39,7 @@ class hexagonTest(TestCase):
         self.assertFalse(game.gameEnded())
 
     def testDuplicateMoveDoesNotChangeBoard(self):
-        game = HexagonGame(5, 3)
+        game = HexaGrid(5, 3)
         game.board = initialBoard
 
         game.makeMove(1, 0)
@@ -50,7 +50,7 @@ class hexagonTest(TestCase):
         np.testing.assert_array_equal(initialBoard, game.board)
 
     def testGameEndsWhenNoMoves(self):
-        game = HexagonGame(3, 3)
+        game = HexaGrid(3, 3)
         game.board = np.array([
             [5, -1, 1],
             [4, 5, 1],
@@ -63,7 +63,7 @@ class hexagonTest(TestCase):
         self.assertTrue(game.gameEnded())
 
     def testRemainingCellsDistributed(self):
-        game = HexagonGame(3, 3)
+        game = HexaGrid(3, 3)
         game.board = np.array([
             [5, -1, 1],
             [4, 5, 1],

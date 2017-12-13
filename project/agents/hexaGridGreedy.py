@@ -1,16 +1,17 @@
-from games.hexagon import *
+from games.hexaGrid import getOwnedCells, makeMove
+from interfaces import IAgent
+from interface import implements
 
-class GreedyHexAgent(object):
+
+class HexaGridGreedy(implements(IAgent)):
     def __init__(self, player):
         self.player = player
 
-    def finalize(self, state, reward, actions):
-        pass
-
-    def getMove(self, state: HexagonGame, reward, actions):
+    def getMove(self, state):
         currentBoard = state.board
         bestA = 0
         maxCells = len(getOwnedCells(currentBoard, self.player))
+        actions = state.getActions(self.player)
         for a in actions:
             newBoard = makeMove(currentBoard, state.neighbourMap, self.player, a)
             if len(getOwnedCells(newBoard, self.player)) > maxCells:
@@ -18,5 +19,11 @@ class GreedyHexAgent(object):
                 maxCells = len(getOwnedCells(newBoard, self.player))
         return bestA
 
-    def getTrainedMove(self, state, actions):
-        return self.getMove(state, 0, actions)
+    def getTrainedMove(self, state):
+        return self.getMove(state)
+
+    def finalize(self, state):
+        pass
+
+    def getInfo(self):
+        return

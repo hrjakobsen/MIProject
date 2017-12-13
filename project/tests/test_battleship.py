@@ -1,12 +1,13 @@
 import numpy as np
 from unittest import TestCase
-from games.battleshipSingle import BattleshipGame
+from games.battleship import Battleship
 from copy import deepcopy
+
 
 class BattleShipTests(TestCase):
     def setUp(self):
         np.random.seed(0)
-        self.initialGame = BattleshipGame()
+        self.initialGame = Battleship()
         """
             Player 1 board is:
             [[0 0 0 0 0 1 0 0 0 0]

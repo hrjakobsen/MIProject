@@ -1,8 +1,8 @@
-from games.hexagon import HexagonGame, getHash
-from agents.TabularQLearner import TabularQLearner
-from agents.QFunctionApproximator import QFunctionApproximator
-from agents.RandomAgent import RandomAgent
-from agents.GreedyHexAgent import GreedyHexAgent
+from games.hexaGrid import HexaGrid
+from agents.qFunctionTabular import QFunctionTabular
+from agents.qFunctionSGD import QFunctionSGD
+from agents.random import Random
+from agents.hexaGridGreedy import HexaGridGreedy
 import pickle
 
 import numpy as np
@@ -15,28 +15,28 @@ def loadFromFile(fileName):
         return pickle.load(handle)
 
 
-def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
+def learn(p1, p2, numGames, epsilon, width=3, height=3):
     p2Start = False
     outcomes = []
     interval = numGames / 100
 
-    startGame = HexagonGame(width, height)
+    startGame = HexaGrid(width, height)
 
     for x in range(numGames):
         game = copy.deepcopy(startGame)
 
         if p2Start:
-            makeMove(agent2, game, 2, epsilon)
+            makeMove(p2, game, 2, epsilon)
 
         while not game.gameEnded():
-            makeMove(agent1, game, 1, epsilon)
+            makeMove(p1, game, 1, epsilon)
             if game.gameEnded():
                 break
 
-            makeMove(agent2, game, 2, epsilon)
+            makeMove(p2, game, 2, epsilon)
 
-        agent1.finalize(game, game.getReward(1), game.getActions())
-        agent2.finalize(game, game.getReward(2), game.getActions())
+        agent1.finalize(game)
+        agent2.finalize(game)
 
         p2Start = not p2Start
         outcomes.append(1 if game.getReward(1) == 1 else 2)
@@ -47,14 +47,16 @@ def learn(agent1, agent2, numGames, epsilon, width=3, height=3):
 
 
 def makeMove(agent, game, player, epsilon):
-    actions = game.getActions()
-    action = agent.getMove(game, game.getReward(player), actions)
+    action = agent.getMove(game)
 
-    if agent == agent1:
+    if isinstance(agent, QFunctionTabular):
         errors.append((agent.Q.get((game.hash(), action), 0) - realQs[game.hash(), action]) ** 2)
-        #errors.append((agent.Q(game, action) - realQs[game.hash(), action]) ** 2)
+
+    if isinstance(agent, QFunctionSGD):
+        errors.append((agent.Q(game, action) - realQs[game.hash(), action]) ** 2)
 
     if np.random.rand() < epsilon:
+        actions = game.getActions(player)
         action = actions[np.random.randint(len(actions))]
         agent.s = None
     game.makeMove(player, action)
@@ -62,31 +64,34 @@ def makeMove(agent, game, player, epsilon):
 
 np.set_printoptions(suppress=True, precision=2)
 
-numGames = 10000
+numGames = 50000
 width = 5
 height = 5
 
 realQs = loadFromFile("realQ_{0}x{1}".format(width, height))
 errors = []
 
-g = HexagonGame(width, height)
-#agent1 = QFunctionApproximator(1, len(g.calculateFeatures(g, 0, 1)), batchSize=1000, gamma=1, decay=0.99, alpha=0.1)
-agent1 = TabularQLearner({}, {}, 1)
-agent2 = GreedyHexAgent(2)
+g = HexaGrid(width, height)
+#agent1 = QFunctionSGD(1, g.getNumFeatures(), batchSize=1000, gamma=1, decay=0.99, alpha=0.001, minWeight=0, maxWeight=0)
+agent1 = QFunctionTabular(1, {}, {}, 1)
+agent2 = HexaGridGreedy(2)
 
 np.random.seed(2)
 learn(agent1, agent2, numGames, 0.1, width, height)
 
 
-
 runningMeanNumber = 100
-numDataPoints = 100
+numDataPoints = 1000
 
 errors = np.convolve(errors, np.ones((runningMeanNumber,))/runningMeanNumber, mode='valid')
+
+pltErrors = []
 count = 0
 for x in range(0, len(errors), (len(errors)//numDataPoints)):
     print("{0} {1}".format(count, errors[x]))
+    pltErrors.append(errors[x])
     count += 1
 
-plt.scatter(range(len(errors)), errors)
+
+plt.scatter(range(len(pltErrors)), pltErrors)
 plt.show()

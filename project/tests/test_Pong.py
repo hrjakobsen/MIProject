@@ -2,28 +2,26 @@ from unittest import TestCase
 
 import numpy as np
 
-from games.pong import *
+from games.pong import Pong, updateBall, UP, DOWN, NOTHING
 
 
 class pongTest(TestCase):
-
     def testCalculateFeaturesReturnsCorrectlySizedArray(self):
-        pongGame = PongGame()
+        pongGame = Pong()
         numberOfFeatures = 3
         player = 1
         action = NOTHING
 
-        result = len(pongGame.calculateFeatures(pongGame, player, action))
+        result = len(pongGame.getFeatures(player, action))
 
         self.assertEqual(numberOfFeatures, result)
 
     def testCalculateFeaturesReturnsNotNoneObjects(self):
-        pongGame = PongGame()
-        state = PongGame()
+        pongGame = Pong()
         player = 1
         action = NOTHING
 
-        result = pongGame.calculateFeatures(state, player, action)
+        result = pongGame.getFeatures(player, action)
 
         for i in result:
             self.assertIsNotNone(i)
@@ -31,7 +29,7 @@ class pongTest(TestCase):
     def testUpdateBallIfBallBouncesOnBottomWall(self):
         ballVelocity = np.array([0.5, 0.8])
         ballPosition = np.array([50, 48])
-        pongGame = PongGame(ballVelocity, ballPosition)
+        pongGame = Pong(ballVelocity, ballPosition)
         expectedVelocity = np.array([0.5, -0.8])
 
         result = updateBall(pongGame)
@@ -41,7 +39,7 @@ class pongTest(TestCase):
     def testUpdateBallIfBallBouncesOnTopWall(self):
         ballVelocity = np.array([0.5, -0.8])
         ballPosition = np.array([50, 2])
-        pongGame = PongGame(ballVelocity, ballPosition)
+        pongGame = Pong(ballVelocity, ballPosition)
         expectedVelocity = np.array([0.5, 0.8])
 
         result = updateBall(pongGame)
@@ -51,7 +49,7 @@ class pongTest(TestCase):
     def testUpdateBallBounceOnRightPaddle(self):
         ballVelocity = np.array([0.9, 0.1])
         ballPosition = np.array([99.5, 25])
-        pongGame = PongGame(ballVelocity, ballPosition)
+        pongGame = Pong(ballVelocity, ballPosition)
         expectedVelocity = np.array([-0.9, 0.1])
 
         result = updateBall(pongGame)
@@ -61,7 +59,7 @@ class pongTest(TestCase):
     def testUpdateBallBounceOnLeftPaddle(self):
         ballVelocity = np.array([-0.9, 0.1])
         ballPosition = np.array([0.5, 25])
-        pongGame = PongGame(ballVelocity, ballPosition)
+        pongGame = Pong(ballVelocity, ballPosition)
         expectedVelocity = np.array([0.9, 0.1])
 
         result = updateBall(pongGame)
@@ -71,7 +69,7 @@ class pongTest(TestCase):
     def testUpdateBallIfInCorner(self):
         ballPosition = np.array([99.5, 49.5])
         ballVelocity = np.array([2, 2])
-        pongGame = PongGame(ballVelocity, ballPosition)
+        pongGame = Pong(ballVelocity, ballPosition)
         pongGame.p2pos = 40
         expectedVelocity = np.array([-2, -2])
 
@@ -82,7 +80,7 @@ class pongTest(TestCase):
     def testPlayerOnePositiveRewardIfWon(self):
         ballPosition = np.array([99.5, 2])
         ballVelocity = np.array([2, 0.1])
-        pongGame = PongGame(ballVelocity, ballPosition)
+        pongGame = Pong(ballVelocity, ballPosition)
         expectedReward = 100
 
         pongGame = pongGame.makeMove(1, NOTHING)
@@ -93,7 +91,7 @@ class pongTest(TestCase):
     def testPlayerTwoNegativeRewardIfLost(self):
         ballPosition = np.array([99.5, 2])
         ballVelocity = np.array([2, 0.1])
-        pongGame = PongGame(ballVelocity, ballPosition)
+        pongGame = Pong(ballVelocity, ballPosition)
         expectedReward = -100
 
         pongGame = pongGame.makeMove(1, NOTHING)
@@ -102,7 +100,7 @@ class pongTest(TestCase):
         self.assertEqual(expectedReward, pongGame.getReward(2))
 
     def testPlayerBothZeroRewardIfGameGoing(self):
-        pongGame = PongGame()
+        pongGame = Pong()
 
         pongGame.makeMove(1, NOTHING)
         pongGame.makeMove(2, NOTHING)
@@ -111,13 +109,13 @@ class pongTest(TestCase):
         self.assertEqual(pongGame.getReward(2), 0)
 
     def testPlayersMultipleMovesThrowsValueError(self):
-        pongGame = PongGame()
+        pongGame = Pong()
         pongGame.makeMove(1, UP)
         with self.assertRaises(ValueError):
             pongGame.makeMove(1, UP)
 
     def testBallMovesAfterTwoMoves(self):
-        pongGame = PongGame()
+        pongGame = Pong()
 
         ballPos = pongGame.ballPosition
         ballVelocity = pongGame.ballVelocity
@@ -130,7 +128,7 @@ class pongTest(TestCase):
         ), pongGame.ballPosition)
 
     def testBallOneMoveDoesNotAffectBoard(self):
-        pongGame = PongGame()
+        pongGame = Pong()
         ballPosition = pongGame.ballPosition
 
         pongGame = pongGame.makeMove(1, NOTHING)
@@ -140,7 +138,7 @@ class pongTest(TestCase):
     def testGameEndedAfterWinningMove(self):
         ballPosition = np.array([99.5, 2])
         ballVelocity = np.array([2, 0.1])
-        pongGame = PongGame(ballVelocity, ballPosition)
+        pongGame = Pong(ballVelocity, ballPosition)
 
         pongGame = pongGame.makeMove(1, NOTHING)
         pongGame = pongGame.makeMove(2, NOTHING)
@@ -148,7 +146,7 @@ class pongTest(TestCase):
         self.assertTrue(pongGame.gameEnded())
 
     def testGameNotEndedAfterMoves(self):
-        pongGame = PongGame()
+        pongGame = Pong()
         pongGame.makeMove(1, NOTHING)
         pongGame.makeMove(2, NOTHING)
 

@@ -1,5 +1,152 @@
 import numpy as np
 import math
+import pygame
+
+from interfaces import IGame
+from interface import implements
+
+
+class HexaGrid(implements(IGame)):
+    def __init__(self, width, height):
+        self.board = randomGame(width, height)
+        self.neighbourMap = generateNeighbours(width, height)
+        self._hash = getHash(self.board)
+        self.width = width
+        self.height = height
+        self._features = None
+        self.actions = [0, 1, 2, 3, 4]
+        self.turn = None
+        self.winner = None
+
+    def __deepcopy__(self, _):
+        new = HexaGrid(self.width, self.height)
+        new.board = self.board
+        new.neighbourMap = self.neighbourMap
+        new._hash = self._hash
+        new._features = self._features
+        new.turn = self.turn
+        return new
+
+    def getActions(self, player):
+        return self.actions
+
+    def getTurn(self):
+        if self.turn is None:
+            self.turn = np.random.randint(2) + 1
+
+        return self.turn
+
+    def getNumFeatures(self):
+        return len(self.getFeatures(1, 1))
+
+    def getFeatures(self, player, action):
+        features = calculateFeatures(self, player)
+        results = np.array([feature(self, action) for feature in features])
+        return results
+
+    def makeMove(self, player, action):
+        if action is None:
+            return
+        self.board = makeMove(self.board, self.neighbourMap, player, action)
+        self._hash = getHash(self.board)
+        self.turn = self.turn % 2 + 1
+
+    def gameEnded(self):
+        ended = gameEnded(self.board)
+        if ended:
+            self.winner = 1 if self.getReward(1) > self.getReward(2) else - 1 if self.getReward(1) == self.getReward(2) else 2
+
+        return gameEnded(self.board)
+
+    def getReward(self, player):
+        return getReward(self.board, player)
+
+    def getWinner(self):
+        return self.winner
+
+    def draw(self, surface):
+        surface.fill((150, 150, 150))
+        sizeModifier = min(surface.get_width() / self.width, surface.get_height() / (self.height + 1))
+
+        for x in range(self.width):
+            for y in range(self.height + 1):
+                cell = self.board[(y, x)]
+                if cell == -1: continue
+                self.drawCell(surface, sizeModifier, x, y, cell)
+        pygame.time.delay(16)
+
+    def drawCell(self, surface, sizeModifier, x, y, color):
+        colours = [
+            (255, 0, 0),
+            (0, 255, 0),
+            (0, 0, 255),
+            (255, 255, 0),
+            (255, 140, 0),
+            (50, 50, 50),
+            (200, 0, 200)
+        ]
+
+        if color < 5:
+            foundColour = colours[color]
+        elif color < 10:
+            foundColour = colours[5]
+        else:
+            foundColour = colours[6]
+
+        polygons = []
+        for i in range(6):
+            angle = (60 * i) * math.pi / 180
+            newX = math.cos(angle) * sizeModifier // 2 + x * sizeModifier + sizeModifier // 2
+            newY = math.sin(angle) * sizeModifier // 2 + y * sizeModifier + sizeModifier // 2 - (x % 2) * sizeModifier // 2
+            polygons.append((newX, newY))
+
+        pygame.draw.polygon(surface, foundColour, polygons)
+
+    def hash(self):
+        return self._hash
+
+
+def calculateFeatures(state, player):
+    features = [
+        lambda state, action: 1,
+        lambda state, action: ownedCellsByColor(player, state, action),
+        lambda state, action: getAreaOfPlayer(player, state, action)
+    ]
+
+    return features
+
+
+def calculateFeaturesOld(state, player):
+    features = [lambda state, action: 1]
+
+    # Features are functions of state, action
+    height = state.height + 1
+    numOfCells = height * state.width - state.width // 2
+    colors = [
+        lambda x: x == 0,
+        lambda x: x == 1,
+        lambda x: x == 2,
+        lambda x: x == 3,
+        lambda x: x == 4,
+        lambda x: 5 <= x < 10,
+        lambda x: 10 <= x < 15,
+    ]
+
+    for cell in range(numOfCells):
+        for color in colors:
+            i = cell
+            x = math.floor(i / (height - 0.5))
+            y = i - math.ceil(x * (height - 1 / 2)) + x % 2
+
+            features.append(lambda state, y=y, x=x, color=color: int(color(state.board[y, x])))
+
+    finalFeatures = []
+    for action in state.getActions(player):
+        for feature in features:
+            finalFeatures.append(lambda s, a, action=action, feature=feature: 0 if a != action else feature(s))
+
+    return features
+
 
 def randomGame(width, height):
     """ Generates a random hexagon board
@@ -33,7 +180,6 @@ def getHash(board):
     :param board: the board to hash
     :return: hashed string of board
     """
-
     lookUp = ['0', '1', '2', '3', '4', 'a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b', '']
     return ''.join([lookUp[int(i)] for i in np.nditer(board)])
 
@@ -61,16 +207,12 @@ def makeMove(board, neighbourMap, player, action):
         point = frontier.pop()
         board[point[0], point[1]] = action + player * 5
 
-        #neighbours = pointsAround(point)
         neighbours = neighbourMap[point[0]][point[1]]
 
         # Find the neighbours that are inside the board and
         # have the color of the action and add them to the frontier 
         for neighbour in neighbours:
-            if (0 <= neighbour[0] < height
-                and 0 <= neighbour[1] < width
-                and board[neighbour[0], neighbour[1]] != -1
-                and board[neighbour[0], neighbour[1]] == action):
+            if 0 <= neighbour[0] < height and 0 <= neighbour[1] < width and board[neighbour[0], neighbour[1]] != -1 and board[neighbour[0], neighbour[1]] == action:
                 frontier.append(neighbour)
 
     # If a player has no more moves, the other player is rewarded
@@ -118,12 +260,9 @@ def finaliseBoard(board, neighbourMap, playerCall):
 
     # Check if the player has a valid action that gains more cells
     for cell in frontier:
-        #neighbours = pointsAround(cell)
         neighbours = neighbourMap[cell[0]][cell[1]]
         for neighbour in neighbours:
-            if (0 <= neighbour[0] < height
-                and 0 <= neighbour[1] < width
-                and 0 <= board[neighbour[0], neighbour[1]] < 5):
+            if 0 <= neighbour[0] < height and 0 <= neighbour[1] < width and 0 <= board[neighbour[0], neighbour[1]] < 5:
                 found = True
                 break
         if found:
@@ -148,7 +287,7 @@ def getReward(game, player):
     :return: -0.04 for a non-terminal state, 1 for a win, -1 for a loss
     """
     if not gameEnded(game):
-        return -0.04
+        return 0#-0.04
 
     height = game.shape[0]
     width = game.shape[1]
@@ -158,16 +297,11 @@ def getReward(game, player):
     player1count = np.count_nonzero(game == player1Color)
     player2count = np.count_nonzero(game == player2Color)
 
+    maxCells = width * (height + 1) - (width // 2)
     if player == 1:
-        if player1count > player2count:
-            return 1
-        else:
-            return -1
+        return (player1count - 1) / (maxCells - 1)
     else:
-        if player2count > player1count:
-            return 1
-        else:
-            return -1
+        return (player2count - 1) / (maxCells - 1)
 
 
 def gameEnded(board):
@@ -178,46 +312,8 @@ def gameEnded(board):
     """
     return not np.any(np.logical_and(board >= 0, board < 5))
 
-def pointsAround(point):
-    """
-    Get the neighbouring coordinates of a point
-    :param point: 2-tuple with x and y coordinate
-    :return: a list of neighbouring coordinates
-    """
-    y, x = point[0], point[1]
-
-    relOddCoords = [
-        (-1, 0),
-        (-1, 1),
-        (0, 1),
-        (1, 0),
-        (0, -1),
-        (-1, -1)
-    ]
-
-    relEvenCoords = [
-        (-1, 0),
-        (0, 1),
-        (1, 1),
-        (1, 0),
-        (1, -1),
-        (0, -1)
-    ]
-
-    odd = x % 2 == 1
-
-    neighbours = []
-    for coord in relOddCoords if odd else relEvenCoords:
-        newY = y + coord[0]
-        newX = x + coord[1]
-        neighbours.append([newY, newX])
-
-    return neighbours
-
 
 def generateNeighbours(width, height):
-    neighbourPositions = []
-
     relOddCoords = [
         (-1, 0),
         (-1, 1),
@@ -253,97 +349,7 @@ def generateNeighbours(width, height):
     return neighbourPositions
 
 
-class HexagonGame(object):
-    def __init__(self, width, height):
-        self.board = randomGame(width, height)
-        self.neighbourMap = generateNeighbours(width, height)
-        self._hash = getHash(self.board)
-        self.width = width
-        self.height = height
-        self._features = None
-
-    @staticmethod
-    def getActions():
-        return [0, 1, 2, 3, 4]
-
-    def hash(self):
-        return self._hash
-
-    def makeMove(self, player, action):
-        if action is None:
-            return
-        self.board = makeMove(self.board, self.neighbourMap, player, action)
-        self._hash = getHash(self.board)
-
-    def getReward(self, player):
-        return getReward(self.board, player)
-
-    def gameEnded(self):
-        return gameEnded(self.board)
-
-    def __deepcopy__(self, _):
-        new = HexagonGame(self.width, self.height)
-        new.board = self.board
-        new.neighbourMap = self.neighbourMap
-        new._hash = self._hash
-        new._features = self._features
-        return new
-
-    def getNumFeatures(self):
-        return len(self.calculateFeatures(self, 0, 1))
-
-    def calculateFeatures(self, state, action, player):
-        features = self.getFeatures(player)
-        results = np.array([feature(state, action) for feature in features])
-        return results
-
-    def getFeaturesOld(self, player):
-        if self._features is not None:
-            return self._features
-
-        features = []
-        self._features = [lambda state, action: 1]
-
-        #Features are functions of state, action
-        height = self.height + 1
-        numOfCells = height * self.width - self.width // 2
-        colors = [
-            lambda x: x == 0,
-            lambda x: x == 1,
-            lambda x: x == 2,
-            lambda x: x == 3,
-            lambda x: x == 4,
-            lambda x: 5 <= x < 10,
-            lambda x: 10 <= x < 15,
-        ]
-        for cell in range(numOfCells):
-            for color in colors:
-                i = cell
-                x = math.floor(i / (height - 0.5))
-                y = i-math.ceil(x*(height-1/2))+ x % 2
-
-                features.append(lambda state, y=y, x=x, color=color: int(color(state.board[y, x])))
-
-        for action in self.getActions():
-            for feature in features:
-                self._features.append(lambda s, a, action=action, feature=feature: 0 if a != action else feature(s))
-
-        return self._features
-
-    def getFeatures(self, player):
-        if self._features is not None:
-            return self._features
-
-        self._features = [
-            lambda state, action: 1,
-            lambda state, action: ownedCellsByColor(player, state, action),
-            lambda state, action: getAreaOfPlayer(player, state, action)
-        ]
-
-        return self._features
-
-
-def ownedCellsByColor(player, state: HexagonGame, color):
+def ownedCellsByColor(player, state, color):
     ownedCellsBefore = len(getOwnedCells(state.board, player))
     newBoard = makeMove(state.board, state.neighbourMap, player, color)
     ownedCellsNow = len(getOwnedCells(newBoard, player))
@@ -360,4 +366,4 @@ def getAreaOfPlayer(player, state, action):
         bottom = max(bottom, cell[0])
         left = min(left, cell[1])
 
-    return ((right - left)*(bottom-top)) / ((state.width * (state.height + 1)))
+    return ((right - left) * (bottom - top)) / (state.width * (state.height + 1))

@@ -1,14 +1,24 @@
-from games.battleshipSingle import BattleshipGame
-from games.hexagon import HexagonGame
-from games.pong import PongGame
-from agents.QFunctionApproximator import QFunctionApproximator
+from games.battleship import Battleship
+from games.hexaGrid import HexaGrid
+from games.pong import Pong
+
+from agents.qFunctionSGD import QFunctionSGD
+from agents.hexaGridGreedy import HexaGridGreedy
+from agents.battleshipHuntAndTarget import BattleShipHuntAndTarget
+from agents.pongGreedy import PongGreedy
+from agents.random import Random
+
+import pygame
 import copy
 import numpy as np
 
+BATTLESHIP = 0
+HEXAGRID = 1
+PONG = 2
 
-def train(p1, p2, numGames, numRepeatGames, epsilon, gameFunction):
+
+def train(p1, p2, numGames, numRepeatGames, gameFunction, epsilon):
     interval = numGames / 100
-    p1Turn = True
 
     for x in range(numGames):
         if x % numRepeatGames == 0:
@@ -16,73 +26,66 @@ def train(p1, p2, numGames, numRepeatGames, epsilon, gameFunction):
         game = copy.deepcopy(startGame)
 
         while not game.gameEnded():
-            if p1Turn:
-                makeMove(p2, game, 2, epsilon)
-            else:
+            if game.getTurn() == 1:
                 makeMove(p1, game, 1, epsilon)
+            else:
+                makeMove(p2, game, 2, epsilon)
 
-            p1Turn = not p1Turn
-
-        p1.finalize(game, game.getReward(1), game.getActions())
-        p2.finalize(game, game.getReward(2), game.getActions())
+        p1.finalize(game)
+        p2.finalize(game)
 
         if x % interval == 0:
-            print("\rTrained %s/%s games" % (x, numGames), end="")
+                print("\rTrained %s/%s games - %s" % (x, numGames, p1.getInfo()), end="")
     print()
 
 
-def play(p1, p2, numGames, gameFunction):
-    rewards = []
+def play(p1, p2, numGames, gameFunction, seed=0, visualise=False):
+    np.random.seed(seed)
+    winners = []
     interval = numGames / 100
 
-    p2Start = False
-
-    for x in range(numGames):
-        game = gameFunction()
-
-        if p2Start:
-            makeMove(p2, game, 2, 0)
-
-        while not game.gameEnded():
-            makeMove(p1, game, 1, epsilon)
-            if game.gameEnded():
-                break
-
-            makeMove(p2, game, 2, epsilon)
-
-        p1.finalize(game, game.getReward(1), game.getActions())
-        p2.finalize(game, game.getReward(2), game.getActions())
-
-        p2Start = not p2Start
+    pygame.init()
+    pygame.display.set_mode((1000, 750))
+    surface = pygame.display.get_surface()
 
     for x in range(numGames):
         game = gameFunction()
 
         while not game.gameEnded():
-            game.makeMove(1, agent.getTrainedMove(game, game.getActions(1)))
+            if visualise:
+                game.draw(surface)
+                pygame.display.flip()
 
-        rewards.append(game.getReward(1))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_t:
+                        visualise = not visualise
+                    elif event.key == pygame.K_q:
+                        pygame.quit()
+                        return
+
+            if game.getTurn() == 1:
+                game.makeMove(1, p1.getTrainedMove(game))
+            else:
+                game.makeMove(2, p2.getTrainedMove(game))
+
+        winners.append(game.getWinner())
 
         if x % interval == 0:
             print("\rPlayed %s/%s games" % (x, numGames), end="")
     print()
 
-    return rewards
+    pygame.quit()
+    return winners
 
 
 def makeMove(agent, game, player, epsilon):
-    actions = game.getActions(player)
-    action = agent.getMove(game, game.getReward(player), actions)
+    action = agent.getMove(game)
     if np.random.rand() < epsilon:
-        action = actions[np.random.randint(len(actions))]
-        agent.s = None
-    game.makeMove(player, action)
-
-
-def makeMove(agent, game, player, epsilon):
-    actions = game.getActions(player)
-    action = agent.getMove(game, game.getReward(player), actions)
-    if np.random.rand() < epsilon:
+        actions = game.getActions(player)
         action = actions[np.random.randint(len(actions))]
         agent.s = None
     game.makeMove(player, action)
@@ -90,30 +93,42 @@ def makeMove(agent, game, player, epsilon):
 
 np.set_printoptions(suppress=True, precision=8)
 
-numTrain = 5000
-numRepeatGames = 1000
-trainBoardSize = 6
-trainShips = [2, 3, 4]
-
+game = HEXAGRID
+numTrain = 1000
 numPlay = 100
-playBoardSize = trainBoardSize#10
-playShips = trainShips#[2, 3, 3, 4, 5]
+numRepeatGames = 5
 
-g = BattleshipGame(trainBoardSize, trainShips)
-agent1 = QFunctionApproximator(1, g.getNumFeatures(), batchSize=1000, gamma=1, decay=0.95, alpha=0.1, minWeight=0, maxWeight=0)
+if game == BATTLESHIP:
+    boardSize = 6
+    ships = [2, 3, 4]
+    gameFunc = lambda: Battleship(boardSize, ships)
+    agent2 = Random(2)
 
-np.random.seed(0)
-outcomes = play(agent1, numPlay, playBoardSize, playShips)
-moves = [sum(playShips) * 20 - outcome for outcome in outcomes]
-print("Average score: {0}/{1} | Average moves: {2}/{3}".format(np.mean(outcomes), sum(playShips) * 19, np.mean(moves), sum(playShips)))
-#plt.plot(outcomes)
-#plt.show()
+if game == HEXAGRID:
+    width = 7
+    height = 4
+    gameFunc = lambda: HexaGrid(width, height)
+    agent2 = Random(2)
+    agent2 = HexaGridGreedy(2)
 
-train(agent1, numTrain, numRepeatGames, trainBoardSize, trainShips, 0.1)
+if game == PONG:
+    width = 100
+    height = 50
+    gameFunc = lambda: Pong(width, height)
+    agent2 = Random(2)
 
-np.random.seed(0)
-outcomes = play(agent1, numPlay, playBoardSize, playShips)
-moves = [sum(playShips) * 20 - outcome for outcome in outcomes]
-print("Average score: {0}/{1} | Average moves: {2}/{3}".format(np.mean(outcomes), sum(playShips) * 19, np.mean(moves), sum(playShips)))#plt.plot(outcomes)
-#plt.plot(outcomes)
-#plt.show()
+g = gameFunc()
+agent1 = QFunctionSGD(1, g.getNumFeatures(), batchSize=100, gamma=1, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
+agent2 = QFunctionSGD(2, g.getNumFeatures(), batchSize=100, gamma=1, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
+
+outcomes = play(agent1, agent2, numPlay, gameFunc, seed=0, visualise=True)
+p1Wins = (len([g for g in outcomes if g == 1]))
+print("Player 1 won {} games".format(p1Wins))
+print(outcomes)
+
+train(agent1, agent2, numTrain, numRepeatGames, gameFunc, epsilon=.1)
+
+outcomes = play(agent1, agent2, numPlay, gameFunc, seed=0, visualise=True)
+p1Wins = (len([g for g in outcomes if g == 1]))
+print("Player 1 won {} games".format(p1Wins))
+print(outcomes)

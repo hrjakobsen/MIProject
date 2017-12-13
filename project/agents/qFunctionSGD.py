@@ -1,10 +1,11 @@
 import numpy as np
 import copy
-from Interfaces import IAgent
+import random
+from interfaces import IAgent
 from interface import implements
 
 
-class QFunctionApproximator(implements(IAgent)):
+class QFunctionSGD(implements(IAgent)):
     def __init__(self, player, numFeatures, batchSize=100, gamma=1, decay=0.99, alpha=0.1, minWeight=0, maxWeight=0):
         self.player = player
         self.numFeatures = numFeatures
@@ -27,22 +28,41 @@ class QFunctionApproximator(implements(IAgent)):
         # RMSprop
         self.decay = decay
 
+        random.seed(0)
+
     def Q(self, state, action):
         return np.sum(np.dot(state.getFeatures(self.player, action), self.weights))
 
-    def getMove(self, state, reward):
-        actions = state.getActions(1)
+    def getMove(self, state):
+        reward = state.getReward(self.player)
+        actions = state.getActions(self.player)
 
         self.updateBatch(state, reward, actions)
 
-        self.s = state
+        self.s = copy.deepcopy(state)
         self.a = actions[argmax([self.Q(state, aP) for aP in actions])]
 
         return self.a
 
     def getTrainedMove(self, state):
-        actions = state.getActions(1)
-        return actions[argmax([self.Q(state, aP) for aP in actions])]
+        actions = state.getActions(self.player)
+        bestActions = []
+        maxQ = self.Q(state, actions[0])
+        for action in actions:
+            tempQ = self.Q(state, action)
+            if tempQ == maxQ:
+                bestActions.append(action)
+            elif tempQ > maxQ:
+                bestActions = [action]
+                maxQ = tempQ
+
+        return random.choice(bestActions)
+
+    def finalize(self, state):
+        self.updateBatch(state, state.getReward(self.player), None)
+
+    def getInfo(self):
+        return self.weights
 
     def updateBatch(self, state, reward, actions):
         if self.s is not None:
@@ -51,7 +71,7 @@ class QFunctionApproximator(implements(IAgent)):
             else:
                 q = (1 - self.alpha) * self.Q(self.s, self.a) + self.alpha * (reward + self.gamma * max([self.Q(state, aP) for aP in actions]))
 
-            self.batch.append((copy.deepcopy(self.s), self.a, q))
+            self.batch.append((self.s, self.a, q))
 
         if len(self.batch) == self.batchSize:
             # Update weights
@@ -67,8 +87,8 @@ class QFunctionApproximator(implements(IAgent)):
                 # newWeights[j] -= self.alpha * gradient
 
                 # Momentum
-                # self.velocity[j] = self.mu * self.velocity[j] + gradient
-                # newWeights[j] -= self.alpha * self.velocity[j]
+                #self.velocity[j] = self.mu * self.velocity[j] + gradient
+                #newWeights[j] -= self.alpha * self.velocity[j]
 
                 # ADAGRAD
                 # self.g[j] += gradient ** 2
@@ -80,9 +100,6 @@ class QFunctionApproximator(implements(IAgent)):
 
             self.weights = newWeights
             self.batch = []
-
-    def finalize(self, state, reward):
-        self.updateBatch(state, reward, None)
 
 
 def argmax(l):

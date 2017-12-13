@@ -1,8 +1,11 @@
 import numpy as np
+from interfaces import IAgent
+from interface import implements
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 
-class NeuralNetworkAgent(object):
+
+class QFunctionNeuralNetwork(implements(IAgent)):
     def __init__(self, player, numFeatures, batchSize=1, gamma=1, alpha=0.1):
         self.player = player
         self.weights = np.ones(numFeatures) * 0.5
@@ -22,12 +25,9 @@ class NeuralNetworkAgent(object):
         ])
         self.model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
 
-    def Q(self, state, action):
-        features = np.array([feature(state, action) for feature in state.getFeatures(self.player)])
-        prediction = self.model.predict(np.array([features]))[0]
-        return prediction[0]
-
-    def getMove(self, state, reward, actions):
+    def getMove(self, state):
+        reward = state.getReward(self.player)
+        actions = state.getAction(self.player)
         self.updateBatch(state, reward, actions)
 
         a = actions[argmax([self.Q(state, aP) for aP in actions])]
@@ -37,8 +37,21 @@ class NeuralNetworkAgent(object):
 
         return self.a
 
-    def getTrainedMove(self, state, actions):
+    def getTrainedMove(self, state):
+        actions = state.getAction(self.player)
         return actions[argmax([self.Q(state, aP) for aP in actions])]
+
+    def finalize(self, state):
+        reward = self.getReward(self.player)
+        self.updateBatch(state, reward, None)
+
+    def getInfo(self):
+        return
+
+    def Q(self, state, action):
+        features = np.array([feature(state, action) for feature in state.getFeatures(self.player)])
+        prediction = self.model.predict(np.array([features]))[0]
+        return prediction[0]
 
     def updateBatch(self, state, reward, actions):
         if self.s is not None:
@@ -58,9 +71,6 @@ class NeuralNetworkAgent(object):
             self.batch = []
 
         self.batches += 1
-
-    def finalize(self, state, reward, actions):
-        self.updateBatch(state, reward, None)
 
 
 def argmax(l):

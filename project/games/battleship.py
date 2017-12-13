@@ -1,86 +1,157 @@
+from interfaces import IGame
+from interface import implements
 import numpy as np
-import math
+import copy
+import pygame
+
+
+class Battleship(implements(IGame)):
+    def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
+        self.boardSize = boardSize
+        self.ships = ships
+        self.p1Game = _BattleshipSingleGame(boardSize, ships)
+        self.p2Game = _BattleshipSingleGame(boardSize, ships)
+        self.numFeatures = None
+        self.turn = None
+        self.winner = None
+
+    def __deepcopy__(self, _):
+        new = Battleship(self.boardSize, self.ships)
+        new.p1Game = copy.deepcopy(self.p1Game)
+        new.p2Game = copy.deepcopy(self.p2Game)
+        new.numFeatures = self.numFeatures
+        new.turn = self.turn
+        return new
+
+    def getActions(self, player):
+        # Actions available on the opponent's board
+        return self.p2Game.getActions() if player == 1 else self.p1Game.getActions()
+
+    def getTurn(self):
+        if self.turn is None:
+            self.turn = np.random.randint(2) + 1
+
+        return self.turn
+
+    def getNumFeatures(self):
+        if self.numFeatures is None:
+            self.numFeatures = len(self.p1Game.calculateFeatures((0, 0)))
+        return self.numFeatures
+
+    def getFeatures(self, player, action):
+        return self.p2Game.calculateFeatures(action) if player == 1 else self.p1Game.calculateFeatures(action)
+
+    def makeMove(self, player, action):
+        if player == 1:
+            hit = self.p2Game.makeMove(action)
+        else:
+            hit = self.p1Game.makeMove(action)
+
+        if not hit:
+            self.turn = 1 if self.turn == 2 else 2
+
+    def gameEnded(self):
+        p1Won = self.p2Game.gameEnded()
+        p2Won = self.p1Game.gameEnded()
+        if p1Won:
+            self.winner = 1
+        elif p2Won:
+            self.winner = 2
+
+        return p1Won or p2Won
+
+    def getReward(self, player):
+        return self.p2Game.getReward() if player == 1 else self.p1Game.getReward()
+
+    def getWinner(self):
+        return self.winner
+
+    def draw(self, surface):
+        surface.fill((0, 0, 0))
+        cellSize = int(min(((surface.get_width() - 10) // 2) / self.boardSize, surface.get_height() / self.boardSize))
+
+        self.p1Game.draw(surface, cellSize, 0)
+        self.p2Game.draw(surface, cellSize, cellSize * self.boardSize + 10)
+        pygame.time.delay(50)
+
 
 WATER = 0
 SHIP = 1
 WATERHIT = 2
 SHIPHIT = 3
 
-class BattleshipGame(object):
-    def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5], board1=None, board2=None):
-        self.boardSize = boardSize
-        self.ships = ships
-        self.actions = None
-        self.playerOneBoard, self.playerOneShips = randomBoard(boardSize, ships) if board1 is None else board1
-        self.playerTwoBoard, self.playerTwoShips = randomBoard(boardSize, ships) if board2 is None else board2
-        self.playerOneBoardHits = []
-        self.playerOneNumHits = 0
-        self.playerTwoNumHits = 0
-        self.playerTwoBoardHits = []
-        self.playerOneBoardMisses = []
-        self.playerTwoBoardMisses = []
-        self.numFeatures = None
 
-    def getActions(self, player):
+class _BattleshipSingleGame(object):
+    def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
+        self.boardSize = boardSize
+        self.actions = None
+        self.ships = ships
+        self.board, self.shipStatus = randomBoard(boardSize, ships)
+        self.hits = []
+        self.numHits = 0
+        self.misses = []
+        self.numFeatures = None
+        self.numTurns = 1
+        self.removedShipSquares = []
+        self.getActions()
+
+    def __deepcopy__(self, _):
+        new = _BattleshipSingleGame(self.boardSize, self.ships)
+        new.board = self.board.copy()
+        new.shipStatus = copy.deepcopy(self.shipStatus)
+        new.hits = self.hits.copy()
+        new.numHits = self.numHits
+        new.misses = self.misses.copy()
+        new.numFeatures = self.numFeatures
+        new.numTurns = self.numTurns
+        new.getActions()
+        return new
+
+    def getActions(self):
         if self.actions is None:
-            board = self.playerTwoBoard if player == 1 else self.playerOneBoard
             actions = []
-            for (x, y), value in np.ndenumerate(board):
-                if value < 2:
+            for (x, y), value in np.ndenumerate(self.board):
+                if value < WATERHIT:
                     actions.append((x, y))
             self.actions = actions
 
         return self.actions
 
     def gameEnded(self):
-        return not (np.any(self.playerOneBoard == 1) and np.any(self.playerTwoBoard == 1))
+        return not np.any(self.board == SHIP)
 
-    def getNumFeatures(self):
-        if self.numFeatures is None:
-            self.numFeatures = len(calculateFeatures(self, (0, 0), 1))
+    def calculateFeatures(self, action):
+        results = np.array([
+            1,
+            distanceToSquares(self, action, self.misses),
+            distanceToSquares(self, action, self.hits),
+            hitsOnALine(self, action),
+            #chanceOfHittingShip(state, action)
+        ])
 
-        return self.numFeatures
+        return results
 
-    def calculateFeatures(self, state, action, player):
-        return calculateFeatures(state, action, player)
-
-    def getReward(self, player):
+    def getReward(self):
         if self.gameEnded():
-            numHits = self.playerTwoNumHits if player == 1 else (self.playerOneNumHits)
-            board = self.playerTwoBoard if player == 1 else self.playerOneBoard
-            numMoves = len(np.where(board > 1)[0])
-            return (numHits * 20) - numMoves
+            return (self.numHits * 20) * (self.boardSize / self.numTurns)
 
         return 0
 
-    def __deepcopy__(self, _):
-        new = BattleshipGame(self.boardSize, self.ships, self.playerOneBoard.copy(), self.playerTwoBoard.copy())
-        new.playerOneBoardHits = self.playerOneBoardHits
-        new.playerTwoBoardHits = self.playerTwoBoardHits
-        new.numFeatures = self.numFeatures
-        return new
-
-    def makeMove(self, player, action):
-        board = self.playerTwoBoard if player == 1 else self.playerOneBoard
-        boardHits = self.playerTwoBoardHits if player == 1 else self.playerOneBoardHits
-        boardMisses = self.playerTwoBoardMisses if player == 1 else self.playerOneBoardMisses
-        ships = self.playerTwoShips if player == 1 else self.playerOneShips
-
-        board[action[0], action[1]] += 2
+    def makeMove(self, action):
+        self.board[action[0], action[1]] += 2
         self.actions.remove(action)
+        self.numTurns += 1
 
-        if board[action[0], action[1]] == 2:
-            boardMisses.append(action)
+        if self.board[action[0], action[1]] == WATERHIT:
+            self.misses.append(action)
+            return False
 
-        if board[action[0], action[1]] == 3:
-            if player == 1:
-                self.playerTwoNumHits += 1
-            else:
-                self.playerTwoNumHits += 1
+        if self.board[action[0], action[1]] == SHIPHIT:
+            self.numHits += 1
+            self.hits.append(action)
+            self.numTurns -= 1
 
-            boardHits.append(action)
-
-            for ship in ships:
+            for ship in self.shipStatus:
                 if (action, True) in ship:
                     ship[ship.index((action, True))] = (action, False)
                     shipSunk = True
@@ -91,7 +162,33 @@ class BattleshipGame(object):
 
                     if shipSunk:
                         for cell in ship:
-                            boardHits.remove(cell[0])
+                            self.hits.remove(cell[0])
+            return True
+
+    def draw(self, surface, sizeModifier, offset):
+        for row in range(self.boardSize):
+            for col in range(self.boardSize):
+                self.drawCell(surface, sizeModifier, offset, row, col, self.board[row][col])
+
+    def drawCell(self, surface, sizeModifier, offset, y, x, content):
+        coordinates = (int(x * sizeModifier + offset), int(y * sizeModifier), sizeModifier, sizeModifier)
+
+        if content == 0 or content == 2:
+            color = (0, 0, 255)
+        else:
+            color = (100, 100, 100)
+
+        pygame.draw.rect(surface, color, coordinates)
+
+        if content == 2:
+            circleR = sizeModifier // 6
+            pygame.draw.circle(surface, (200, 200, 200), (coordinates[0] + sizeModifier // 2, coordinates[1] + sizeModifier // 2), circleR)
+            pygame.draw.circle(surface, color, (coordinates[0] + sizeModifier // 2, coordinates[1] + sizeModifier // 2), int(circleR * 0.5))
+        elif content == 3:
+            circleR = sizeModifier // 4
+            pygame.draw.circle(surface, (200, 20, 20), (coordinates[0] + sizeModifier // 2, coordinates[1] + sizeModifier // 2), circleR)
+            pygame.draw.circle(surface, color, (coordinates[0] + sizeModifier // 2, coordinates[1] + sizeModifier // 2), int(circleR * 0.5))
+
 
 def randomBoard(boardSize, ships):
     board = np.zeros((boardSize, boardSize), dtype=int)
@@ -114,7 +211,7 @@ def randomBoard(boardSize, ships):
 
                 if placeable:
                     for i in range(ship):
-                        board[row, col + i] = 1
+                        board[row, col + i] = SHIP
                         shipsList[-1].append(((row, col + i), True))
                     placed = True
         else:
@@ -131,48 +228,48 @@ def randomBoard(boardSize, ships):
 
                 if placeable:
                     for i in range(ship):
-                        board[row + i, col] = 1
+                        board[row + i, col] = SHIP
                         shipsList[-1].append(((row + i, col), True))
                     placed = True
 
     return board, shipsList
 
-def calculateFeatures(state, action, player):
-    results = np.array([
-        #1,
-        #distanceToHit(state, action, player),
-        #distanceToMiss(state, action, player)
-    ])
 
-    return results
-
-def distanceToHit(state, action, player):
-    # We're interested in the opponent's board
-    boardHits = state.playerTwoBoardHits if player == 1 else state.playerOneBoardHits
-
-    minDist = state.boardSize * 2
-    for hit in boardHits:
+def distanceToSquares(state, action, squares):
+    maxDist = state.boardSize * 2
+    minDist = maxDist
+    for square in squares:
         # Manhattan distance
-        tempDist = abs(action[0] - hit[0]) + abs(action[1] - hit[1])
+        tempDist = abs(action[0] - square[0]) + abs(action[1] - square[1])
         if tempDist < minDist:
             minDist = tempDist
 
-    #print(state.playerTwoBoard)
-    #print(action)
-    #print(minDist)
-    #print()
+    return (minDist - 1) / (maxDist - 1)
 
-    return minDist
 
-def distanceToMiss(state, action, player):
-    # We're interested in the opponent's board
-    boardMisses = state.playerTwoBoardMisses if player == 1 else state.playerOneBoardMisses
+def hitsOnALine(state, action):
+    count = 0
+    for hit in state.hits:
+        if action[0] == hit[0] or action[1] == hit[1]:
+            count += 1
 
-    minDist = state.boardSize * 2
-    for miss in boardMisses:
-        # Euclidian distance
-        tempDist = abs(action[0] - miss[0]) ** 2 + (action[1] - miss[1]) ** 2
-        if tempDist < minDist:
-            minDist = tempDist
+    return (count - 0) / (state.boardSize - 2)
+    return count
 
-    return minDist
+
+def chanceOfHittingShip(state, action):
+    sizeOfShip = 5
+    count = 0
+    actionX, actionY = action
+    for xOffset in range(0, sizeOfShip + 1):
+        highX = actionX - xOffset + sizeOfShip
+        lowX = actionX - xOffset
+        if 0 <= highX < state.boardSize and 0 <= lowX < state.boardSize:
+            count += 1
+
+    for yOffset in range(0, sizeOfShip + 1):
+            highY = actionY - yOffset + sizeOfShip
+            lowY = actionY - yOffset
+            if 0 <= highY < state.boardSize and 0 <= lowY < state.boardSize:
+                count += 1
+    return count
