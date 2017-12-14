@@ -15,6 +15,7 @@ CELLCOLOR5 = (150, 0, 255)
 P1COLOR = (50, 50, 50)
 P2COLOR = (200, 200, 200)
 
+
 class HexaGrid(implements(IGame)):
     def __init__(self, width, height):
         self.board = randomGame(width, height)
@@ -24,7 +25,7 @@ class HexaGrid(implements(IGame)):
         self.height = height
         self._features = None
         self.actions = [0, 1, 2, 3, 4]
-        self.turn = None
+        self.turn = np.random.randint(2) + 1
         self.winner = None
 
     def __deepcopy__(self, _):
@@ -40,9 +41,6 @@ class HexaGrid(implements(IGame)):
         return self.actions
 
     def getTurn(self):
-        if self.turn is None:
-            self.turn = np.random.randint(2) + 1
-
         return self.turn
 
     def getNumFeatures(self):
@@ -297,7 +295,7 @@ def getReward(game, player):
     :return: -0.04 for a non-terminal state, 1 for a win, -1 for a loss
     """
     if not gameEnded(game):
-        return 0#-0.04
+        return 0
 
     height = game.shape[0]
     width = game.shape[1]
@@ -307,7 +305,7 @@ def getReward(game, player):
     player1count = np.count_nonzero(game == player1Color)
     player2count = np.count_nonzero(game == player2Color)
 
-    maxCells = width * (height + 1) - (width // 2)
+    maxCells = width * height - (width // 2) - 1
     if player == 1:
         return (player1count - 1) / (maxCells - 1)
     else:

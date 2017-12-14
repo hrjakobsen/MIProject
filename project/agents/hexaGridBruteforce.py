@@ -46,7 +46,7 @@ class HexaGridBruteforce(implements(IAgent)):
         return maxA
 
     def getTrainedMove(self, state):
-        return self.getMove(state, 0)
+        return self.getMove(state)
 
     def finalize(self, state):
         pass
@@ -115,10 +115,10 @@ class Node(object):
         if q is None:
             state2 = copy.deepcopy(self.state)
             state2.makeMove(self.nextPlayer(), 0)
-            self.q = state2.getReward(1)
+            self.q = state2.getReward(self.player)
             return self.q
 
-        self.q = self.state.getReward(1) + self.gamma * q
+        self.q = self.state.getReward(self.player) + self.gamma * q
         return q
 
     def calculateRestOfQ(self, nodes):
@@ -131,7 +131,7 @@ class Node(object):
             subTree = self.subTrees[a]
             if subTree.hash == self.state.hash():
                 # discount moves which doesn't do anything
-                Q[self.hash, a] = self.state.getReward(1) + self.gamma * subTree.q
+                Q[self.hash, a] = self.state.getReward(self.player) + self.gamma * subTree.q
             else:
                 Q[self.hash, a] = subTree.q
 

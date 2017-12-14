@@ -4,7 +4,7 @@ import numpy as np
 
 np.random.seed(2)
 
-game = HexaGrid(3, 3)
+game = HexaGrid(5, 5)
 agent = HexaGridBruteforce(game, 1, gamma=1)
 
 agent.save()

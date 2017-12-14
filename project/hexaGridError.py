@@ -64,7 +64,7 @@ def makeMove(agent, game, player, epsilon):
 
 np.set_printoptions(suppress=True, precision=2)
 
-numGames = 50000
+numGames = 100000
 width = 5
 height = 5
 
