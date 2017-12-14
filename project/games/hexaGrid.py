@@ -1,10 +1,19 @@
 import numpy as np
 import math
 import pygame
+import pygame.gfxdraw
 
 from interfaces import IGame
 from interface import implements
 
+BACKGROUNDCOLOR = (150, 150, 150)
+CELLCOLOR1 = (150, 0, 0)
+CELLCOLOR2 = (255, 150, 0)
+CELLCOLOR3 = (0, 150, 0)
+CELLCOLOR4 = (0, 150, 255)
+CELLCOLOR5 = (150, 0, 255)
+P1COLOR = (50, 50, 50)
+P2COLOR = (200, 200, 200)
 
 class HexaGrid(implements(IGame)):
     def __init__(self, width, height):
@@ -65,25 +74,25 @@ class HexaGrid(implements(IGame)):
         return self.winner
 
     def draw(self, surface):
-        surface.fill((150, 150, 150))
+        surface.fill(BACKGROUNDCOLOR)
         sizeModifier = min(surface.get_width() / self.width, surface.get_height() / (self.height + 1))
 
         for x in range(self.width):
             for y in range(self.height + 1):
                 cell = self.board[(y, x)]
-                if cell == -1: continue
-                self.drawCell(surface, sizeModifier, x, y, cell)
-        pygame.time.delay(16)
+                if cell != -1:
+                    self.drawCell(surface, sizeModifier, x, y, cell)
+        pygame.time.delay(100)
 
     def drawCell(self, surface, sizeModifier, x, y, color):
         colours = [
-            (255, 0, 0),
-            (0, 255, 0),
-            (0, 0, 255),
-            (255, 255, 0),
-            (255, 140, 0),
-            (50, 50, 50),
-            (200, 0, 200)
+            CELLCOLOR1,
+            CELLCOLOR2,
+            CELLCOLOR3,
+            CELLCOLOR4,
+            CELLCOLOR5,
+            P1COLOR,
+            P2COLOR,
         ]
 
         if color < 5:
@@ -100,7 +109,8 @@ class HexaGrid(implements(IGame)):
             newY = math.sin(angle) * sizeModifier // 2 + y * sizeModifier + sizeModifier // 2 - (x % 2) * sizeModifier // 2
             polygons.append((newX, newY))
 
-        pygame.draw.polygon(surface, foundColour, polygons)
+        pygame.gfxdraw.filled_polygon(surface, polygons, foundColour)
+        pygame.gfxdraw.aapolygon(surface, polygons, foundColour)
 
     def hash(self):
         return self._hash

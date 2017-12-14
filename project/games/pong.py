@@ -4,6 +4,7 @@ import numpy as np
 import copy
 import math
 import pygame
+import pygame.gfxdraw
 
 UP = 1
 NOTHING = 0
@@ -97,19 +98,20 @@ class Pong(implements(IGame)):
     def draw(self, surface):
         surface.fill((0, 0, 0))
         sizeModifier = min((surface.get_width() - PADDLEWIDTH * 2) / self.width, surface.get_height() / self.height)
-        pygame.draw.rect(surface, BACKGROUNDCOLOR, (0, 0, self.width * sizeModifier + PADDLEWIDTH * 2, self.height * sizeModifier))
+        pygame.gfxdraw.box(surface, (0, 0, self.width * sizeModifier + PADDLEWIDTH * 2, self.height * sizeModifier), BACKGROUNDCOLOR)
 
         # Paddle 1
         p1Paddle = (0, int(self.p1pos - self.paddleHeight // 2) * sizeModifier, PADDLEWIDTH, self.paddleHeight * sizeModifier)
-        pygame.draw.rect(surface, P1COLOR, p1Paddle)
+        pygame.gfxdraw.box(surface, p1Paddle, P1COLOR)
 
         # Paddle 2
         p2Paddle = (self.width * sizeModifier + PADDLEWIDTH, int(self.p2pos - self.paddleHeight // 2) * sizeModifier, PADDLEWIDTH, self.paddleHeight * sizeModifier)
-        pygame.draw.rect(surface, P2COLOR, p2Paddle)
+        pygame.gfxdraw.box(surface, p2Paddle, P2COLOR)
 
         # Ball
         bX, bY = self.ballPosition * sizeModifier
-        pygame.draw.circle(surface, BALLCOLOR, (int(bX + PADDLEWIDTH), int(bY)), int(self.ballRadius * sizeModifier))
+        pygame.gfxdraw.aacircle(surface, int(bX + PADDLEWIDTH), int(bY), int(self.ballRadius * sizeModifier), BALLCOLOR)
+        pygame.gfxdraw.filled_circle(surface, int(bX + PADDLEWIDTH), int(bY), int(self.ballRadius * sizeModifier), BALLCOLOR)
         pygame.time.delay(6)
 
 
@@ -223,60 +225,6 @@ def paddleUpdate(state, action, player):
     return max(min(state.height - state.paddleHeight // 2, myPos + state.paddleSpeed * action), state.paddleHeight // 2)
 
 
-def getFeaturesOld(player):
-    features = [
-        lambda s, a: 1,
-        # the position of the paddle after a move
-        # lambda s, a: paddlePositions(s, a, player)[1],
-        # the position of the ball after a move
-        # lambda s, a: makePlayerMove(s, a, player).ballPosition[0],
-        # lambda s, a: makePlayerMove(s, a, player).ballPosition[1],
-        # the velocity of the ball after a move
-        # lambda s, a: makePlayerMove(s, a, player).ballVelocity[0],
-        # lambda s, a: makePlayerMove(s, a, player).ballVelocity[1],
-
-        lambda s, a: distanceToBall(s, a, player),
-    ]
-
-    return features
-
-
-# one-hot encoding
-def getFeatures(state, player):
-    features = [
-        lambda s, a: 1,
-        lambda s, a: makePlayerMove(s, a, player).ballVelocity[0],
-        lambda s, a: makePlayerMove(s, a, player).ballVelocity[1],
-        #lambda s, a: distanceToBall(s, a, player)
-    ]
-    # the height of the board
-    for y in range(state.height):
-        features.append(lambda s, a, yPos=y: oneHotEncodedPaddle(player, yPos, s, a))
-    for y in range(state.height):
-        features.append(lambda s, a, yPos=y: oneHotEncodedBallY(player, yPos, s, a))
-    for x in range(state.width):
-        features.append(lambda s, a, xPos=x: oneHotEncodedBallX(player, xPos, s, a))
-    return features
-
-
-def oneHotEncodedPaddle(player, y, s, a):
-    newS = makePlayerMove(s, a, player)
-    paddlePos = newS.p1pos if player == 1 else newS.p2pos
-    return 1 if abs(paddlePos - y) <= newS.paddleHeight // 2 else 0
-
-
-def oneHotEncodedBallY(player, y, s, a):
-    newS = makePlayerMove(s, a, player)
-    ballPosY = newS.ballPosition[1]
-    return 1 if abs(ballPosY - y) <= newS.ballRadius else 0
-
-
-def oneHotEncodedBallX(player, x, s, a):
-    newS = makePlayerMove(s, a, player)
-    ballPosY = newS.ballPosition[0]
-    return 1 if abs(ballPosY - x) <= newS.ballRadius else 0
-
-
 def distanceToBall(s, a, player):
     s2 = makePlayerMove(s, a, player)
     paddleY = s2.p1pos if player == 1 else s2.p2pos
@@ -287,7 +235,7 @@ def calculateFeatures(state, action, player):
     nextState = makePlayerMove(state, action, player)
 
     results = np.array([
-        1,
+        #1,
         #nextState.p1pos if player == 1 else nextState.p2pos,
         #nextState.ballPosition[0],
         #nextState.ballPosition[1],
@@ -295,21 +243,15 @@ def calculateFeatures(state, action, player):
         #nextState.ballVelocity[1],
         #distanceToBall(nextState, player),
         getAngle(nextState, player),
-        distanceFromCenter(nextState, player)
+        #distanceFromCenter(nextState, player)
         #getAngleLookahead(nextState, player)
     ])
 
     return results
 
 
-def distanceFromCenter(s, player):
-    dist = abs(s.p1pos - s.height // 2) if player == 1 else abs(s.p2pos - s.height // 2)
-    return dist // s.height
-
-
 def getAngle(s, player):
     #return 0 if the ball is not travelling in the direction of the player
-    #since the agent needs to minimize the angle
     if player == 1 and s.ballVelocity[0] > 0:
         return 0
     if player == 2 and s.ballVelocity[0] < 0:
@@ -323,52 +265,19 @@ def getAngle(s, player):
     dotProduct = np.dot(vector, s.ballVelocity)
     angle = math.acos(dotProduct / np.dot(lengthOfPaddleVec, 1))
 
-    #angle in degrees
-    angle *= 180/math.pi
-
-    return angle
+    angle = 2 * math.pi - angle if angle > 0.5 * math.pi else angle
+    return angle / 0.5 * math.pi
 
 
-def getAngleLookahead(s, player):
-    # keep simulating until we find the vector that would hit
-    direction = s.ballVelocity.copy()
-    position = s.ballPosition.copy()
-    while True:
-        #factorToPaddle()
-        factorPaddle = max([(paddle - position[0]) / direction[0] for paddle in [0, s.width]])
-        #factor wall
-        factorWall = 1e20 if direction[1] == 0 else max([(wall - position[1]) / direction[1] for wall in
-                [s.ballRadius, s.height - s.ballRadius]])
-
-        if factorPaddle < factorWall:
-            # we got a hit
-            if player == 1 and direction[0] < 0:
-                break
-            elif player == 2 and direction[0] > 0:
-                break
-            position += direction * factorPaddle
-            direction[0] *= -1
-        elif factorWall < factorPaddle:
-            position += direction * factorWall
-            direction[1] *= -1
-
-    #
-    endPosition = position + direction * factorPaddle
-
-    yPosition = endPosition[1]
-
-    paddle = s.p1pos if player == 1 else s.p2pos
-
-    diff = yPosition - paddle
-
-    print(yPosition, paddle)
-
-    return abs(diff)
+def distanceFromCenter(s, player):
+    dist = abs(s.p1pos - s.height // 2) if player == 1 else abs(s.p2pos - s.height // 2)
+    return dist // s.height
 
 
 def getVectorBetweenBallAndPaddle(s, player):
-    vector = np.array([0 - s.ballPosition[0], s.p1pos - s.ballPosition[1]]) if player == 1 else np.asarray([200 - s.ballPosition[0], s.p2pos - s.ballPosition[1]])
-    return vector
+    playerX = 0 if player == 1 else s.width
+    playerY = s.p1pos if player == 1 else s.p2pos
+    return np.array([playerX - s.ballPosition[0], playerY - s.ballPosition[1]])
 
 
 def distanceToBall(s, player):
@@ -385,7 +294,7 @@ def getReward(state, player):
     if state.winner is None:
         return 0
     # 1 for winning and -1 for losing
-    return 100 if player == state.winner else -100
+    return 1 if player == state.winner else -1
 
 
 def paddlePositions(state, action, player):

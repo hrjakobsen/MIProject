@@ -61,7 +61,13 @@ class Battleship(implements(IGame)):
         return p1Won or p2Won
 
     def getReward(self, player):
-        return self.p2Game.getReward() if player == 1 else self.p1Game.getReward()
+        if self.winner == 1 and player == 1:
+            return self.p2Game.getReward()
+        elif self.winner == 2 and player == 2:
+            return self.p1Game.getReward()
+
+        return 0
+
 
     def getWinner(self):
         return self.winner
@@ -131,10 +137,7 @@ class _BattleshipSingleGame(object):
         return results
 
     def getReward(self):
-        if self.gameEnded():
-            return (self.numHits * 20) * (self.boardSize / self.numTurns)
-
-        return 0
+        return (self.numHits * 20) * (self.boardSize / self.numTurns)
 
     def makeMove(self, action):
         self.board[action[0], action[1]] += 2
