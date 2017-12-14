@@ -46,14 +46,14 @@ class QFunctionSGD(implements(IAgent)):
 
     def getTrainedMove(self, state):
         actions = state.getActions(self.player)
-        bestActions = []
+        bestActions = [actions[0]]
         maxQ = self.Q(state, actions[0])
-        for action in actions:
-            tempQ = self.Q(state, action)
+        for i in range(1, len(actions)):
+            tempQ = self.Q(state, actions[i])
             if tempQ == maxQ:
-                bestActions.append(action)
+                bestActions.append(actions[i])
             elif tempQ > maxQ:
-                bestActions = [action]
+                bestActions = [actions[i]]
                 maxQ = tempQ
 
         return random.choice(bestActions)

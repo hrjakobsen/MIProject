@@ -88,7 +88,7 @@ class Trainer(object):
                     game.makeMove(1, self.agent1.getTrainedMove(game))
                 else:
                     game.makeMove(2, self.agent2.getTrainedMove(game))
-
+            game.getReward(1)
             self.recentOutcomes.append(game.getWinner())
 
             if verbose and x % interval == 0:

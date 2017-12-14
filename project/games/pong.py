@@ -20,9 +20,11 @@ class Pong(implements(IGame)):
     def __init__(self, width=100, height= 50, ballVelocity=None, ballPosition=None):
         self.width = width
         self.height = height
+        self.ballPosition = np.array([width // 2, height // 2]) if ballPosition is None else ballPosition
         self.p1pos = self.height // 2
         self.p2pos = self.height // 2
-        self.ballPosition = np.array([width // 2, height // 2]) if ballPosition is None else ballPosition
+        self.p1Bounces = 0
+        self.p2Bounces = 0
         self.ballRadius = 3
         self.paddleSpeed = 0.5
         self.paddleHeight = 15
@@ -47,7 +49,17 @@ class Pong(implements(IGame)):
         new = Pong(self.width, self.height, self.ballVelocity, self.ballPosition)
         new.p1pos = self.p1pos
         new.p2pos = self.p2pos
+        new.p1Bounces = self.p1Bounces
+        new.p2Bounces = self.p2Bounces
+        new.ballRadius = self.ballRadius
+        new.paddleSpeed = self.paddleSpeed
+        new.paddleHeight = self.paddleHeight
+        new.winner = self.winner
+        new.numFeatures = self.numFeatures
+        new.lastP1Action = self.lastP1Action
+        new.lastP2Action = self.lastP2Action
         new.turn = self.turn
+
         return new
 
     def getActions(self, player):
@@ -80,17 +92,25 @@ class Pong(implements(IGame)):
         if self.lastP1Action is None or self.lastP2Action is None:
             return self
 
-        self.p1pos = paddleUpdate(self, self.lastP1Action, 1)
-        self.p2pos = paddleUpdate(self, self.lastP2Action, 2)
+        tempState = simulateMove(self, self.lastP1Action, self.lastP2Action)
+        self.p1pos = tempState.p1pos
+        self.p2pos = tempState.p2pos
+        self.ballPosition = tempState.ballPosition
+        self.ballVelocity = tempState.ballVelocity
+        self.winner = tempState.winner
+        self.p1Bounces = tempState.p1Bounces
+        self.p2Bounces = tempState.p2Bounces
 
-        self.ballPosition, self.ballVelocity, self.winner = updateBall(self)
         self.lastP1Action, self.lastP2Action = None, None
 
     def gameEnded(self):
         return self.winner is not None
 
     def getReward(self, player):
-        return getReward(self, player)
+        if player == 1 and self.p1Bounces == 1:
+            self.p1Bounces = 0
+            return 1
+        return 0
 
     def getWinner(self):
         return self.winner
@@ -115,14 +135,40 @@ class Pong(implements(IGame)):
         pygame.time.delay(6)
 
 
+def simulatePlayerMove(state, action, player):
+    return simulateMove(state, action, NOTHING) if player == 1 else simulateMove(state, NOTHING, action)
+
+
+def simulateMove(state, action1, action2):
+    newState = copy.deepcopy(state)
+
+    newState.p1pos = paddleUpdate(state, action1, 1)
+    newState.p2pos = paddleUpdate(state, action2, 2)
+    newState.ballPosition, newState.ballVelocity, newState.winner, bounced = updateBall(state)
+
+    if bounced:
+        if newState.ballPosition[0] < newState.width // 2:
+            newState.p1Bounces += 1
+        else:
+            newState.p2Bounces += 1
+
+    return newState
+
+
+def paddleUpdate(state, action, player):
+    myPos = state.p1pos if player == 1 else state.p2pos
+    return max(min(state.height - state.paddleHeight // 2, myPos + state.paddleSpeed * action), state.paddleHeight // 2)
+
+
 def updateBall(state):
-    newPos = state.ballPosition + state.ballVelocity
-    newVel = state.ballVelocity
+    bounced = False
+    newVel = state.ballVelocity.copy()
+    newPos = state.ballPosition.copy() + newVel
 
     factorPaddle, factorWall = factorToPaddle(state), factorToWall(state)
 
     if factorPaddle > 1 and factorWall > 1:
-        return newPos, state.ballVelocity, None
+        return newPos, state.ballVelocity, None, bounced
 
     if factorWall < 1 and factorPaddle < 1:
         # Update the smallest factor first
@@ -137,20 +183,22 @@ def updateBall(state):
             # We can now check if ball is bouncing off of paddle
             paddlePos = state.p1pos if (newPos[0] < state.width / 2) else state.p2pos
             if paddlePos - state.paddleHeight // 2 < newPos[1] < paddlePos + state.paddleHeight // 2:
-                # Bounced!
+                # Bounced off wall and then paddle!
+                bounced = True
                 newVel[0] *= -1
                 remainingFactor = 1 - (factorPaddle + factorWall)
                 newPos += newVel * remainingFactor
             else:
-                # Someone lost
+                # Ball bounced off wall and someone lost
                 remainingFactor = 1 - (factorPaddle + factorWall)
                 newPos += newVel * remainingFactor
-                return newPos, newVel, int(newPos[0] < state.width // 2) + 1
+                return newPos, newVel, int(newPos[0] < state.width // 2) + 1, bounced
         else:
             newPos = state.ballPosition + state.ballVelocity * factorPaddle
             paddlePos = state.p1pos if (newPos[0] < state.width / 2) else state.p2pos
             if paddlePos - state.paddleHeight // 2 < newPos[1] < paddlePos + state.paddleHeight // 2:
-                # Bounced!
+                # Bounced off paddle and then wall!
+                bounced = True
                 newVel[0] *= -1
                 newPos += state.ballVelocity * (factorPaddle - factorWall)
                 newVel[1] *= -1
@@ -159,7 +207,7 @@ def updateBall(state):
                 # Someone lost
                 remainingFactor = 1 - factorPaddle
                 newPos += newVel * remainingFactor
-                return newPos, newVel, int(newPos[0] < state.width // 2) + 1
+                return newPos, newVel, int(newPos[0] < state.width // 2) + 1, bounced
 
     elif factorWall < 1:
         newPos = state.ballPosition + state.ballVelocity * factorWall
@@ -169,7 +217,8 @@ def updateBall(state):
         newPos = state.ballPosition + state.ballVelocity * factorPaddle
         paddlePos = state.p1pos if (newPos[0] < state.width / 2) else state.p2pos
         if paddlePos - state.paddleHeight // 2 < newPos[1] < paddlePos + state.paddleHeight // 2:
-            # Bounced!
+            # Bounced off paddle!
+            bounced = True
             newVel[0] *= -1
             remainingFactor = 1 - factorPaddle
             newPos += newVel * remainingFactor
@@ -177,9 +226,9 @@ def updateBall(state):
             # Someone lost
             remainingFactor = 1 - factorPaddle
             newPos += newVel * remainingFactor
-            return newPos, newVel, int(newPos[0] < state.width // 2) + 1
+            return newPos, newVel, int(newPos[0] < state.width // 2) + 1, bounced
 
-    return newPos, newVel, None
+    return newPos, newVel, None, bounced
 
 
 def factorToWall(state):
@@ -209,96 +258,46 @@ def factorToPaddle(state):
         )
 
 
-def makeMove(state, action1, action2):
-    newState = copy.deepcopy(state)
-
-    newState.p1pos = paddleUpdate(state, action1, 1)
-    newState.p2pos = paddleUpdate(state, action2, 2)
-
-    newState.ballPosition, newState.ballVelocity, newState.winner = updateBall(state)
-
-    return newState
-
-
-def paddleUpdate(state, action, player):
-    myPos = state.p1pos if player == 1 else state.p2pos
-    return max(min(state.height - state.paddleHeight // 2, myPos + state.paddleSpeed * action), state.paddleHeight // 2)
-
-
-def distanceToBall(s, a, player):
-    s2 = makePlayerMove(s, a, player)
-    paddleY = s2.p1pos if player == 1 else s2.p2pos
-    return math.log2(1 / max(((s2.ballPosition[1] - paddleY) ** 2), 0.00001))
-
-
 def calculateFeatures(state, action, player):
-    nextState = makePlayerMove(state, action, player)
+    newState = simulatePlayerMove(state, action, player)
 
     results = np.array([
-        #1,
-        #nextState.p1pos if player == 1 else nextState.p2pos,
-        #nextState.ballPosition[0],
-        #nextState.ballPosition[1],
-        #nextState.ballVelocity[0],
-        #nextState.ballVelocity[1],
-        #distanceToBall(nextState, player),
-        getAngle(nextState, player),
-        #distanceFromCenter(nextState, player)
-        #getAngleLookahead(nextState, player)
+        1,
+        getAngle(newState, player),
     ])
 
     return results
 
 
-def getAngle(s, player):
+def getAngle(state, player):
     #return 0 if the ball is not travelling in the direction of the player
-    if player == 1 and s.ballVelocity[0] > 0:
+    if player == 1 and state.ballVelocity[0] > 0:
         return 0
-    if player == 2 and s.ballVelocity[0] < 0:
+    if player == 2 and state.ballVelocity[0] < 0:
         return 0
 
-    vector = getVectorBetweenBallAndPaddle(s, player)
+    vector = getVectorBetweenBallAndPaddle(state, player)
     lengthOfPaddleVec = math.sqrt(vector[0] * vector[0] + vector[1] * vector[1])
 
     #avoid division by 0
     lengthOfPaddleVec = 0.000001 if lengthOfPaddleVec == 0 else lengthOfPaddleVec
-    dotProduct = np.dot(vector, s.ballVelocity)
+    dotProduct = np.dot(vector, state.ballVelocity)
     angle = math.acos(dotProduct / np.dot(lengthOfPaddleVec, 1))
 
-    angle = 2 * math.pi - angle if angle > 0.5 * math.pi else angle
-    return angle / 0.5 * math.pi
+    return angle
+
+
+def getVectorBetweenBallAndPaddle(state, player):
+    playerX = 0 if player == 1 else state.width
+    playerY = state.p1pos if player == 1 else state.p2pos
+    return np.array([playerX - state.ballPosition[0], playerY - state.ballPosition[1]])
+
+
+def distanceToBall(state, player):
+    paddleY = state.p1pos if player == 1 else state.p2pos
+    return (state.ballPosition[1] - paddleY) ** 2
 
 
 def distanceFromCenter(s, player):
     dist = abs(s.p1pos - s.height // 2) if player == 1 else abs(s.p2pos - s.height // 2)
     return dist // s.height
-
-
-def getVectorBetweenBallAndPaddle(s, player):
-    playerX = 0 if player == 1 else s.width
-    playerY = s.p1pos if player == 1 else s.p2pos
-    return np.array([playerX - s.ballPosition[0], playerY - s.ballPosition[1]])
-
-
-def distanceToBall(s, player):
-    paddleY = s.p1pos if player == 1 else s.p2pos
-
-    return (s.ballPosition[1] - paddleY) ** 2
-
-
-def makePlayerMove(s, a, player):
-    return makeMove(s, a, NOTHING) if player == 1 else makeMove(s, NOTHING, a)
-
-
-def getReward(state, player):
-    if state.winner is None:
-        return 0
-    # 1 for winning and -1 for losing
-    return 1 if player == state.winner else -1
-
-
-def paddlePositions(state, action, player):
-    enemyPos = state.p2pos if player == 1 else state.p1pos
-    myPos = paddleUpdate(state, action, player)
-
-    return myPos, enemyPos

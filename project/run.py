@@ -19,7 +19,7 @@ PONG = 2
 game = PONG
 numTrain = 1000
 numPlay = 100
-numRepeatGames = 5
+numRepeatGames = 1
 
 if game == BATTLESHIP:
     boardSize = 10
@@ -41,7 +41,7 @@ if game == PONG:
     agent2 = Random(2)
 
 g = gameFunc()
-agent1 = QFunctionSGD(1, g.getNumFeatures(), batchSize=500, gamma=0.9, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
+agent1 = QFunctionSGD(1, g.getNumFeatures(), batchSize=100, gamma=0.9, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
 #agent2 = QFunctionSGD(2, g.getNumFeatures(), batchSize=100, gamma=1, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
 
 trainer = Trainer(agent1, agent2, gameFunc)
