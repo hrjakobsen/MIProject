@@ -64,15 +64,15 @@ def makeMove(agent, game, player, epsilon):
 
 np.set_printoptions(suppress=True, precision=2)
 
-numGames = 100000
+numGames = 1000
 width = 5
 height = 5
 
-realQs = loadFromFile("realQ_{0}x{1}".format(width, height))
+realQs = loadFromFile("realQ_{}x{}".format(width, height))
 errors = []
 
 g = HexaGrid(width, height)
-#agent1 = QFunctionSGD(1, g.getNumFeatures(), batchSize=1000, gamma=1, decay=0.99, alpha=0.001, minWeight=0, maxWeight=0)
+agent1 = QFunctionSGD(1, g.getNumFeatures(), batchSize=1000, gamma=1, decay=0.99, alpha=0.001, minWeight=0, maxWeight=0)
 agent1 = QFunctionTabular(1, {}, {}, 1)
 agent2 = HexaGridGreedy(2)
 
@@ -87,7 +87,7 @@ errors = np.convolve(errors, np.ones((runningMeanNumber,))/runningMeanNumber, mo
 
 pltErrors = []
 count = 0
-for x in range(0, len(errors), (len(errors)//numDataPoints)):
+for x in range(0, len(errors), len(errors) // numDataPoints):
     print("{0} {1}".format(count, errors[x]))
     pltErrors.append(errors[x])
     count += 1

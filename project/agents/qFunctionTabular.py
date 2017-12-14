@@ -80,7 +80,7 @@ class QFunctionTabular(implements(IAgent)):
         :param num: The number of times the state has been visited
         :return: val if the state has been visited more than 10 times, otherwise 100
         """
-        if num < 2:
+        if num < 10:
             return 5
         return val
 
@@ -111,7 +111,7 @@ class QFunctionTabular(implements(IAgent)):
         The learning rate parameter is decreasing over time
         :return: the current learning rate parameter for the last state and action
         """
-        return 0.001#1 / (100 + self.N.get((self.s.hash(), self.a), 0))
+        return 1 / (1000 + self.N.get((self.s.hash(), self.a), 0))
 
     @classmethod
     def load(cls, player):

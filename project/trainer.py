@@ -57,7 +57,7 @@ class Trainer(object):
 
         if visualise:
             pygame.init()
-            pygame.display.set_mode((1000, 750))
+            pygame.display.set_mode((1920, 1080))
             surface = pygame.display.get_surface()
 
         for x in range(numGames):
@@ -88,7 +88,6 @@ class Trainer(object):
                     game.makeMove(1, self.agent1.getTrainedMove(game))
                 else:
                     game.makeMove(2, self.agent2.getTrainedMove(game))
-            game.getReward(1)
             self.recentOutcomes.append(game.getWinner())
 
             if verbose and x % interval == 0:

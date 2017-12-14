@@ -3,6 +3,7 @@ from interface import implements
 import numpy as np
 import copy
 import pygame
+import pygame.gfxdraw
 
 
 class Battleship(implements(IGame)):
@@ -68,16 +69,15 @@ class Battleship(implements(IGame)):
 
         return 0
 
-
     def getWinner(self):
         return self.winner
 
     def draw(self, surface):
-        surface.fill((0, 0, 0))
+        surface.fill(BACKGROUNDCOLOR)
         cellSize = int(min(((surface.get_width() - 10) // 2) / self.boardSize, surface.get_height() / self.boardSize))
 
         self.p1Game.draw(surface, cellSize, 0)
-        self.p2Game.draw(surface, cellSize, cellSize * self.boardSize + 10)
+        self.p2Game.draw(surface, cellSize, surface.get_width() - cellSize * self.boardSize + GRIDSIZE)
         pygame.time.delay(50)
 
 
@@ -85,7 +85,15 @@ WATER = 0
 SHIP = 1
 WATERHIT = 2
 SHIPHIT = 3
+SHIPSUNK = 4
 
+GRIDSIZE = 2
+BACKGROUNDCOLOR = (150, 150, 150)
+WATERCOLOR = (60, 160, 220)
+SHIPCOLOR = (130, 130, 130)
+WATERHITCOLOR = (210, 210, 210)
+SHIPHITCOLOR = (250, 50, 50)
+SHIPSUNKCOLOR = (210, 50, 50)
 
 class _BattleshipSingleGame(object):
     def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
@@ -117,7 +125,7 @@ class _BattleshipSingleGame(object):
         if self.actions is None:
             actions = []
             for (x, y), value in np.ndenumerate(self.board):
-                if value < WATERHIT:
+                if value == WATER or value == SHIP:
                     actions.append((x, y))
             self.actions = actions
 
@@ -165,6 +173,7 @@ class _BattleshipSingleGame(object):
                     if shipSunk:
                         for cell in ship:
                             self.hits.remove(cell[0])
+                            self.board[cell[0][0], cell[0][1]] = SHIPSUNK
             return True
 
     def draw(self, surface, sizeModifier, offset):
@@ -173,23 +182,29 @@ class _BattleshipSingleGame(object):
                 self.drawCell(surface, sizeModifier, offset, row, col, self.board[row][col])
 
     def drawCell(self, surface, sizeModifier, offset, y, x, content):
-        coordinates = (int(x * sizeModifier + offset), int(y * sizeModifier), sizeModifier, sizeModifier)
+        coordinates = (int(x * sizeModifier + offset), int(y * sizeModifier), sizeModifier - GRIDSIZE, sizeModifier - GRIDSIZE)
 
-        if content == 0 or content == 2:
-            color = (0, 0, 255)
+        if content == WATER or content == WATERHIT:
+            color = WATERCOLOR
+        elif content == SHIP or content == SHIPHIT:
+            color = SHIPCOLOR
         else:
-            color = (100, 100, 100)
+            color = SHIPSUNKCOLOR
 
-        pygame.draw.rect(surface, color, coordinates)
+        pygame.gfxdraw.box(surface, coordinates, color)
 
-        if content == 2:
-            circleR = sizeModifier // 6
-            pygame.draw.circle(surface, (200, 200, 200), (coordinates[0] + sizeModifier // 2, coordinates[1] + sizeModifier // 2), circleR)
-            pygame.draw.circle(surface, color, (coordinates[0] + sizeModifier // 2, coordinates[1] + sizeModifier // 2), int(circleR * 0.5))
-        elif content == 3:
-            circleR = sizeModifier // 4
-            pygame.draw.circle(surface, (200, 20, 20), (coordinates[0] + sizeModifier // 2, coordinates[1] + sizeModifier // 2), circleR)
-            pygame.draw.circle(surface, color, (coordinates[0] + sizeModifier // 2, coordinates[1] + sizeModifier // 2), int(circleR * 0.5))
+        if content == WATERHIT or content == SHIPHIT:
+            if content == WATERHIT:
+                hitColor = WATERHITCOLOR
+            else:
+                hitColor = SHIPHITCOLOR
+
+            radius = (sizeModifier - GRIDSIZE) // 4
+            center = (sizeModifier - GRIDSIZE) // 2
+            pygame.gfxdraw.filled_circle(surface, coordinates[0] + center, coordinates[1] + center, radius, hitColor)
+            pygame.gfxdraw.aacircle(surface, coordinates[0] + center, coordinates[1] + center, radius, hitColor)
+            pygame.gfxdraw.filled_circle(surface, coordinates[0] + center, coordinates[1] + center, int(radius * 0.5), color)
+            pygame.gfxdraw.aacircle(surface, coordinates[0] + center, coordinates[1] + center, int(radius * 0.5), color)
 
 
 def randomBoard(boardSize, ships):

@@ -16,22 +16,21 @@ BATTLESHIP = 0
 HEXAGRID = 1
 PONG = 2
 
-game = PONG
-numTrain = 1000
-numPlay = 100
-numRepeatGames = 1
+game = HEXAGRID
+numTrain = 10
+numPlay = 5
+numRepeatGames = 100
 
 if game == BATTLESHIP:
-    boardSize = 10
-    ships = [2, 3, 3, 4, 5]
+    boardSize = 6
+    ships = [2, 3, 4]
     gameFunc = lambda: Battleship(boardSize, ships)
     agent2 = BattleShipHuntAndTarget(2, boardSize)
 
 if game == HEXAGRID:
-    width = 7
-    height = 4
+    width = 103
+    height = 57
     gameFunc = lambda: HexaGrid(width, height)
-    agent2 = Random(2)
     agent2 = HexaGridGreedy(2)
 
 if game == PONG:

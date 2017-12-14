@@ -10,10 +10,10 @@ UP = 1
 NOTHING = 0
 DOWN = -1
 
+BACKGROUNDCOLOR = (150, 150, 150)
 P1COLOR = (30, 160, 0)
 P2COLOR = (0, 30, 255)
 BALLCOLOR = (255, 0, 0)
-BACKGROUNDCOLOR = (200, 200, 200)
 PADDLEWIDTH = 8
 
 class Pong(implements(IGame)):
@@ -25,7 +25,7 @@ class Pong(implements(IGame)):
         self.p2pos = self.height // 2
         self.p1Bounces = 0
         self.p2Bounces = 0
-        self.ballRadius = 3
+        self.ballRadius = 2
         self.paddleSpeed = 0.5
         self.paddleHeight = 15
         self.winner = None
