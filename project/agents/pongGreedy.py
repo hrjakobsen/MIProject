@@ -4,6 +4,9 @@ from interface import implements
 
 class PongGreedy(implements(IAgent)):
     def __init__(self, player):
+        """
+        :param player: the id of the player this agent plays as
+        """
         self.player = player
 
     def getMove(self, state):

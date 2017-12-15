@@ -18,6 +18,10 @@ P2COLOR = (200, 200, 200)
 
 class HexaGrid(implements(IGame)):
     def __init__(self, width, height):
+        """
+        :param width: width of the game
+        :param height: height of the game
+        """
         self.board = randomGame(width, height)
         self.neighbourMap = generateNeighbours(width, height)
         self._hash = getHash(self.board)
@@ -157,11 +161,6 @@ def calculateFeaturesOld(state, player):
 
 
 def randomGame(width, height):
-    """ Generates a random hexagon board
-    :param width: width of board
-    :param height: height of board at odd columns
-    :return: a random game
-    """
     board = np.random.randint(5, size=(height + 1, width))
 
     # What we actually want is a jagged array where the odd cols
@@ -179,27 +178,11 @@ def randomGame(width, height):
 
 
 def getHash(board):
-    """
-    This function generates a unique hash for each board
-    This is done by realising that each cell on the board
-    can be in one of 7 (5 colors + owned by either player)
-    This means that each cell can be stored in a single character
-    0-4 (colors), a (owned by player 1) and b (owned by player 2)
-    :param board: the board to hash
-    :return: hashed string of board
-    """
     lookUp = ['0', '1', '2', '3', '4', 'a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b', '']
     return ''.join([lookUp[int(i)] for i in np.nditer(board)])
 
 
 def makeMove(board, neighbourMap, player, action):
-    """
-    Performs a move on the board and creates an updated version of the board
-    :param board: The board to update
-    :param player: The player which plays the move
-    :param action: The move
-    :return: The updated board
-    """
     # Do everything on a copy to ensure stateless-ness
     board = board.copy()
 
@@ -230,11 +213,6 @@ def makeMove(board, neighbourMap, player, action):
 
 
 def getOwnedCells(board, player):
-    """
-    :param board: the board which the cells should be found in
-    :param player: the player whose turn currently is
-    :return: list of owned cells
-    """
     lowerLimit = player * 5
     upperLimit = (player + 1) * 5
 
@@ -250,13 +228,6 @@ def getOwnedCells(board, player):
 
 
 def finaliseBoard(board, neighbourMap, playerCall):
-    """
-    Updates the board if the game is terminated, such that players are
-    given the remainder of the cells if the opponent cannot reach them.
-    :param board: The game to finalise
-    :param playerCall: The player calling the function
-    :return: The finalised board
-    """
     board = board.copy()
     player = 2 if playerCall == 1 else 1
     frontier = getOwnedCells(board, player)
@@ -286,14 +257,6 @@ def finaliseBoard(board, neighbourMap, playerCall):
 
 
 def getReward(game, player):
-    """
-    This function calculates the reward of a game
-    We reward nothing for a move unless it is a winning move
-    Then it gains 1 point. If it is a losing move, it gains -1<
-    :param game: The current board
-    :param player: The current player
-    :return: -0.04 for a non-terminal state, 1 for a win, -1 for a loss
-    """
     if not gameEnded(game):
         return 0
 
@@ -313,11 +276,6 @@ def getReward(game, player):
 
 
 def gameEnded(board):
-    """
-    Checks if the game has ended
-    :param board: The current board
-    :return: True if the game has ended, False otherwise
-    """
     return not np.any(np.logical_and(board >= 0, board < 5))
 
 

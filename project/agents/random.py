@@ -5,16 +5,12 @@ import numpy as np
 
 class Random(implements(IAgent)):
     def __init__(self, player):
+        """
+        :param player: the id of the player this agent plays as
+        """
         self.player = player
 
     def getMove(self, state):
-        """
-        Ask the agent what action to take
-        :param state: the current game
-        :param reward: the current reward
-        :param actions: the actions to choose from
-        :return: the action to play in this state
-        """
         actions = state.getActions(self.player)
         return actions[np.random.randint(len(actions))]
 

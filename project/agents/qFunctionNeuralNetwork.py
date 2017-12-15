@@ -7,6 +7,13 @@ from keras.layers import Dense, Activation
 
 class QFunctionNeuralNetwork(implements(IAgent)):
     def __init__(self, player, numFeatures, batchSize=1, gamma=1, alpha=0.1):
+        """
+        :param player: the id of the player this agent plays as
+        :param numFeatures: number of features the agent has access to
+        :param batchSize: number of moves to perform between each update
+        :param gamma: discount factor to use
+        :param alpha: learning rate to use
+        """
         self.player = player
         self.weights = np.ones(numFeatures) * 0.5
         self.s, self.a, self.r = None, None, None

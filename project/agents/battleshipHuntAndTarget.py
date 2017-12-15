@@ -5,17 +5,14 @@ import numpy as np
 
 class BattleShipHuntAndTarget(implements(IAgent)):
     def __init__(self, player, boardSize):
+        """
+        :param player: the id of the player this agent plays as
+        :param boardSize: size of the board the agent will be playing on
+        """
         self.player = player
         self.boardSize = boardSize
 
     def getMove(self, state):
-        """
-        Ask the agent what action to take
-        :param state: the current game
-        :param reward: the current reward
-        :param actions: the actions to choose from
-        :return: the action to play in this state
-        """
         actions = state.getActions(self.player)
         hits = state.p2Game.hits if self.player == 1 else state.p1Game.hits
         for hit in hits:

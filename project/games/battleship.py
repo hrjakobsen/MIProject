@@ -8,6 +8,10 @@ import pygame.gfxdraw
 
 class Battleship(implements(IGame)):
     def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
+        """
+        :param boardSize: size of the game
+        :param ships: list of ship lengths
+        """
         self.boardSize = boardSize
         self.ships = ships
         self.p1Game = _BattleshipSingleGame(boardSize, ships)

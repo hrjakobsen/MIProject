@@ -13,9 +13,10 @@ class QFunctionTabular(implements(IAgent)):
 
     def __init__(self, player, Q, N, gamma=1):
         """
-        :param player: the player id of the agent (1 or 2)
+        :param player: the id of the player this agent plays as
         :param Q: The Q table to use
         :param N: The N table to use
+        :param gamma: discount factor to use
         """
         self.player = player
         self.Q = Q
@@ -27,13 +28,6 @@ class QFunctionTabular(implements(IAgent)):
         self.r = None
 
     def getMove(self, state):
-        """
-        Ask the agent what action to take
-        :param state: the current game
-        :param reward: the current reward
-        :param actions: the actions to chose from
-        :return: the action to play in this state
-        """
         actions = state.getActions(self.player)
         reward = state.getReward(self.player)
         if self.s is not None:
@@ -65,41 +59,21 @@ class QFunctionTabular(implements(IAgent)):
         return
 
     def _argmax(self, actions):
-        """
-        :return: the action that results in the highest value from the f-function
-        """
         s = self.s.hash()
         vals = [self._f(self.Q.get((s, a), 0), self.N.get((s, a), 0)) for a in actions]
         return actions.index(vals.index(max(vals)))
 
     def _f(self, val, num):
-        """
-        This function rewards exploration versus exploitation
-        the first 10 times a state is encountered
-        :param val: The current Q-estimate
-        :param num: The number of times the state has been visited
-        :return: val if the state has been visited more than 10 times, otherwise 100
-        """
         if num < 10:
             return 5
         return val
 
     def _incrementN(self):
-        """
-        Increments the number of times the agent have seen a state
-        :return:
-        """
         s = self.s.hash()
         a = self.a
         self.N[s, a] = self.N.get((s, a), 0) + 1
 
     def _updateQ(self, sP, rP, actions):
-        """
-        Do the update rule for the Q-table
-        :param sP: The current state
-        :param rP: The current reward
-        :return:
-        """
         s = self.s.hash()
         sP = sP.hash()
         a = self.a
@@ -107,10 +81,6 @@ class QFunctionTabular(implements(IAgent)):
             self.r + self.gamma * (max([self.Q.get((sP, aP), 0) for aP in actions]) - self.Q.get((s, a), 0)))
 
     def _alpha(self):
-        """
-        The learning rate parameter is decreasing over time
-        :return: the current learning rate parameter for the last state and action
-        """
         return 1 / (1000 + self.N.get((self.s.hash(), self.a), 0))
 
     @classmethod

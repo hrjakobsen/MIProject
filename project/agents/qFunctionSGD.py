@@ -6,7 +6,17 @@ from interface import implements
 
 
 class QFunctionSGD(implements(IAgent)):
-    def __init__(self, player, numFeatures, batchSize=100, gamma=1, decay=0.99, alpha=0.1, minWeight=0, maxWeight=0):
+    def __init__(self, player, numFeatures, batchSize=100, gamma=1, alpha=0.1, decay=0.99, minWeight=0, maxWeight=0):
+        """
+        :param player: the id of the player this agent plays as
+        :param numFeatures: number of features the agent has access to
+        :param batchSize: number of moves to perform between each update
+        :param gamma: discount factor to use
+        :param alpha: learning rate to use
+        :param decay: decay rate used to shrink RMSprop's cache
+        :param minWeight: minimum start weight
+        :param maxWeight: maximum start weight
+        """
         self.player = player
         self.numFeatures = numFeatures
         self.weights = np.random.uniform(minWeight, maxWeight, size=numFeatures)
