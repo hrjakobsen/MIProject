@@ -37,7 +37,7 @@ if game == PONG:
     gameFunc = lambda: Pong(width, height)
 
 agent1 = QFunctionSGD(1, gameFunc().getNumFeatures(), batchSize=100, gamma=0.9, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
-agent2 = QFunctionSGD(2, gameFunc().getNumFeatures(), batchSize=100, gamma=1, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
+agent2 = QFunctionSGD(2, gameFunc().getNumFeatures(), batchSize=100, gamma=0.9, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
 
 trainer = Trainer(agent1, agent2, gameFunc)
 trainer.run(numPlay, numTrain, numRepeatGames, verbose=True, visualise=False)

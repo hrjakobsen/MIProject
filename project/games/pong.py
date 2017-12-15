@@ -264,6 +264,7 @@ def calculateFeatures(state, action, player):
     results = np.array([
         1,
         getAngle(newState, player),
+        distanceFromCenter(newState, player)
     ])
 
     return results
@@ -298,6 +299,6 @@ def distanceToBall(state, player):
     return (state.ballPosition[1] - paddleY) ** 2
 
 
-def distanceFromCenter(s, player):
-    dist = abs(s.p1pos - s.height // 2) if player == 1 else abs(s.p2pos - s.height // 2)
-    return dist // s.height
+def distanceFromCenter(state, player):
+    dist = abs(state.p1pos - state.height // 2) if player == 1 else abs(state.p2pos - state.height // 2)
+    return dist // state.height

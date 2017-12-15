@@ -46,17 +46,7 @@ class QFunctionSGD(implements(IAgent)):
 
     def getTrainedMove(self, state):
         actions = state.getActions(self.player)
-        bestActions = [actions[0]]
-        maxQ = self.Q(state, actions[0])
-        for i in range(1, len(actions)):
-            tempQ = self.Q(state, actions[i])
-            if tempQ == maxQ:
-                bestActions.append(actions[i])
-            elif tempQ > maxQ:
-                bestActions = [actions[i]]
-                maxQ = tempQ
-
-        return random.choice(bestActions)
+        return actions[argmax([self.Q(state, aP) for aP in actions])]
 
     def finalize(self, state):
         self.updateBatch(state, state.getReward(self.player), None)
