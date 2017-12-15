@@ -5,26 +5,32 @@ import numpy as np
 
 
 class Trainer(object):
-    def __init__(self, agent1 : IAgent, agent2 : IAgent, gameFunction, epsilon=0.1, playSeed=0):
+    def __init__(self, agent1 : IAgent, agent2 : IAgent, gameFunction, epsilon=0.1, playSeed=0, trainSeed=0):
         self.agent1 = agent1
         self.agent2 = agent2
         self.gameFunction = gameFunction
         self.epsilon = epsilon
         self.playSeed = playSeed
+        self.trainSeed = trainSeed
+        self.resolution = (1920, 1080)
         self.recentOutcomes = None
 
     def run(self, numPlays, numTrains, numRepeatGames, verbose=False, visualise=False):
+        print("Starting full run: {0} test games, {1} training games, {0} test games".format(numPlays, numTrains))
         self.play(numPlays, verbose, visualise)
         if verbose:
             p1Wins, p2Wins, draw = self.countOutcomes()
             print("Player 1: {} | Player 2: {} | Draws: {}".format(p1Wins, p2Wins, draw))
+        print("Finished {} test games".format(numPlays))
 
         self.train(numTrains, numRepeatGames, verbose)
+        print("Finished {} training games".format(numTrains))
 
         self.play(numPlays, verbose, visualise)
         if verbose:
             p1Wins, p2Wins, draw = self.countOutcomes()
             print("Player 1: {} | Player 2: {} | Draws: {}".format(p1Wins, p2Wins, draw))
+        print("Finished {} test games".format(numPlays))
 
     def train(self, numGames, numRepeatGames, verbose):
         np.random.seed(self.playSeed)
@@ -57,7 +63,7 @@ class Trainer(object):
 
         if visualise:
             pygame.init()
-            pygame.display.set_mode((1920, 1080))
+            pygame.display.set_mode(self.resolution)
             surface = pygame.display.get_surface()
 
         for x in range(numGames):

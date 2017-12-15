@@ -16,32 +16,28 @@ BATTLESHIP = 0
 HEXAGRID = 1
 PONG = 2
 
-game = HEXAGRID
-numTrain = 10
-numPlay = 5
+game = BATTLESHIP
+numTrain = 1000
+numPlay = 100
 numRepeatGames = 100
 
 if game == BATTLESHIP:
-    boardSize = 6
-    ships = [2, 3, 4]
+    boardSize = 10
+    ships = [2, 3, 3, 4, 5]
     gameFunc = lambda: Battleship(boardSize, ships)
-    agent2 = BattleShipHuntAndTarget(2, boardSize)
 
 if game == HEXAGRID:
-    width = 103
-    height = 57
+    width = 13
+    height = 9
     gameFunc = lambda: HexaGrid(width, height)
-    agent2 = HexaGridGreedy(2)
 
 if game == PONG:
     width = 100
     height = 50
     gameFunc = lambda: Pong(width, height)
-    agent2 = Random(2)
 
-g = gameFunc()
-agent1 = QFunctionSGD(1, g.getNumFeatures(), batchSize=100, gamma=0.9, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
-#agent2 = QFunctionSGD(2, g.getNumFeatures(), batchSize=100, gamma=1, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
+agent1 = QFunctionSGD(1, gameFunc().getNumFeatures(), batchSize=100, gamma=0.9, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
+agent2 = QFunctionSGD(2, gameFunc().getNumFeatures(), batchSize=100, gamma=1, decay=0.95, alpha=0.001, minWeight=0, maxWeight=0)
 
 trainer = Trainer(agent1, agent2, gameFunc)
-trainer.run(numPlay, numTrain, numRepeatGames, verbose=True, visualise=True)
+trainer.run(numPlay, numTrain, numRepeatGames, verbose=True, visualise=False)
