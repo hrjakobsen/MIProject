@@ -1,9 +1,9 @@
-from agents.hexagonBruteforce import HexagonBruteforce
-from games.hexagon import HexagonGame, getHash
-from agents.TabularQLearner import TabularQLearner
-from agents.QFunctionApproximator import QFunctionApproximator
-from agents.RandomAgent import RandomAgent
-from agents.GreedyHexAgent import GreedyHexAgent
+from agents.hexaGridBruteforce import HexaGridBruteforce
+from games.hexaGrid import HexaGrid, getHash
+from agents.qFunctionTabular import QFunctionTabular
+from agents.qFunctionSGD import QFunctionSGD
+from agents.random import Random
+from agents.hexaGridGreedy import HexaGridGreedy
 import pickle
 import os
 import numpy as np
@@ -36,8 +36,8 @@ def learn(agent1, agent2, game, numGames, epsilon, width=3, height=3):
 
             makeMove(agent2, game, 2, epsilon)
 
-        agent1.finalize(game, game.getReward(1), game.getActions())
-        agent2.finalize(game, game.getReward(2), game.getActions())
+        agent1.finalize(game)
+        agent2.finalize(game)
 
         p2Start = not p2Start
         outcomes.append(1 if game.getReward(1) == 1 else 2)
@@ -48,8 +48,8 @@ def learn(agent1, agent2, game, numGames, epsilon, width=3, height=3):
 
 
 def makeMove(agent, game, player, epsilon):
-    actions = game.getActions()
-    action = agent.getMove(game, game.getReward(player), actions)
+    actions = game.getActions(player)
+    action = agent.getMove(game)
 
     if agent == agent1:
         predictQ = agent.Q.get((game.hash(), action), 0)
@@ -64,25 +64,44 @@ def makeMove(agent, game, player, epsilon):
 
 np.set_printoptions(suppress=True, precision=2)
 
-numGames = 150000
+numGames = 1000
 width = 5
 height = 5
 
-alphas = [#((lambda _: 0.001), "0.001")]
-          #((lambda _: 0.01), "0.01")]
-          #((lambda x: 1/(100+x)), "1/(100+x)")]
-          ((lambda x: 1/(1000+x)), "1/(1000+x)")]
-gammas = [0.5]
-fValues = [20]
+agent2 = None
+
+configurations = [
+    (
+        ((lambda: 0.001), "0.001"),
+        1,
+        ((lambda val, num: 5 if num < 2 else val), "2")
+    ),
+    (
+        ((lambda: 0.01), "0.01"),
+        0.99,
+        ((lambda val, num: 5 if num < 5 else val), "20")
+    ),
+    (
+        ((lambda: 1/(100+agent1.N.get((agent1.s.getHash(), agent1.a), 0))), "1/(100+x)"),
+        0.9,
+        ((lambda val, num: 5 if num < 10 else val), "20")
+    ),
+    (
+        ((lambda: 1/(1000+agent1.N.get((agent1.s.getHash(), agent1.a), 0))), "1/(1000+x)"),
+        0.5,
+        ((lambda val, num: 5 if num < 20 else val), "20")
+    )
+]
 
 np.random.seed(2)
-startGame = HexagonGame(width, height)
-i = 17
-for gamma in gammas:
+startGame = HexaGrid(width, height)
+i = 0
+for conf in configurations:
+    gamma = conf[1]
     fileName = "realQ_{0}x{1}_gamma{2}".format(width, height, gamma)
     if not os.path.exists(fileName):
         print("generating {0}".format(fileName))
-        bruteforce = HexagonBruteforce(startGame, 1, gamma=gamma)
+        bruteforce = HexaGridBruteforce(startGame, 1, gamma=gamma)
         print("saving {0}".format(fileName))
         bruteforce.save(fileName)
         print("done saving {0}".format(fileName))
@@ -91,47 +110,57 @@ for gamma in gammas:
 
     fig = plt
 
+    alpha = conf[0]
+    fValue = conf[2]
+    alphaF, alphaS = alpha
+    errors = []
 
-    for alpha in alphas:
-        alphaF, alphaS = alpha
-        for fValue in fValues:
-            errors = []
+    agent1 = QFunctionTabular(1, {}, {}, gamma=gamma)
 
-            agent1 = TabularQLearner({}, {}, gamma=gamma, alphaF=alphaF, fValue=fValue)
-            agent2 = GreedyHexAgent(2)
-            g = copy.deepcopy(startGame)
+    agent1._alpha = alphaF
+    agent1._f = fValue[0]
 
-            np.random.seed(2)
-            learn(agent1, agent2, g, numGames, 0.1, width, height)
+    agent2 = HexaGridGreedy(2)
+    g = copy.deepcopy(startGame)
 
-            learned += numGames
+    np.random.seed(2)
+    learn(agent1, agent2, g, numGames, 0.1, width, height)
 
-            runningMeanNumber = 100
-            numDataPoints = 1000
+    learned += numGames
 
-            allErrors = errors.copy()
+    runningMeanNumber = 100
+    numDataPoints = 500
 
-            errors = np.convolve(errors, np.ones((runningMeanNumber,))/runningMeanNumber, mode='valid')
-            count = 0
+    allErrors = errors.copy()
 
-            output = []
-            for x in range(0, len(errors), (len(errors)//numDataPoints)):
-                print("{0} {1}".format(count, errors[x]))
-                output.append(errors[x])
-                count += 1
+    errors = np.convolve(errors, np.ones((runningMeanNumber,))/runningMeanNumber, mode='valid')
+    count = 0
 
-            #plt.xkcd()
-            fig.scatter(range(len(output)), output)
-            fig.suptitle("gamma={0}, alpha={1}, f={2},\n iterations={3}".format(gamma, alphaS, fValue, numGames), y=0.99, fontsize=17)
+    output = []
+    for x in range(0, len(errors), (len(errors)//numDataPoints)):
+        print("{0} {1}".format(count, errors[x]))
+        output.append(errors[x])
+        count += 1
 
-            fig.ylabel('Running MSE')
-            fig.xlabel('Moves')
+    #plt.xkcd()
+    ymax = max(output)
+    ymin = min(output)
+    plt.ylim([max(0, ymin * 0.9), ymax * 1.1])
+    plt.tick_params(
+        axis='x',  # changes apply to the x-axis
+        which='both',  # both major and minor ticks are affected
+        bottom='off',  # ticks along the bottom edge are off
+        top='off',  # ticks along the top edge are off
+        labelbottom='off')
+    fig.scatter(range(len(output)), output)
+    fig.suptitle("discount factor={0}, learning rate={1},\nNe={2}, iterations={3}".format(gamma, alphaS, fValue[1], numGames), y=0.99, fontsize=17)
 
-            fileName = "Test{0}".format(i)
-            print(fileName)
-            fig.savefig("Output/ErrorPlot{0}.png".format(fileName))
+    fig.ylabel('Running MSE')
+    fig.xlabel('Moves')
 
-            fig.show()
+    fileName = "Test{0}".format(i)
+    print(fileName)
+    fig.savefig("outputs/ErrorPlot{0}.png".format(fileName))
 
-            i += 1
-            errors = allErrors.copy()
+    i += 1
+    errors = allErrors.copy()

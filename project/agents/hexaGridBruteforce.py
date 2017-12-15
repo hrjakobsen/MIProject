@@ -54,8 +54,7 @@ class HexaGridBruteforce(implements(IAgent)):
     def getInfo(self):
         return
 
-    def save(self):
-        fileName = "realQ_{0}x{1}".format(str(self.width), str(self.height))
+    def save(self, fileName):
         import pickle
         with open(fileName, 'wb') as handle:
             pickle.dump(self.Q, handle, protocol=pickle.HIGHEST_PROTOCOL)
