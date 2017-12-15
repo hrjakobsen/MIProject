@@ -129,8 +129,15 @@ class Node(object):
         for a in self.subTrees:
             subTree = self.subTrees[a]
             if subTree.hash == self.state.hash():
-                # discount moves which doesn't do anything
-                Q[self.hash, a] = self.state.getReward(self.player) + self.gamma * subTree.q
+                if subTree.state.gameEnded():
+                    Q[self.hash, a] = subTree.q
+                else:
+                    # discount moves which doesn't do anything
+                    reward = self.state.getReward(self.player)
+                    totalReward = reward + self.gamma * subTree.q
+                    Q[self.hash, a] = totalReward
+                    if totalReward > 1:
+                        print("staph")
             else:
                 Q[self.hash, a] = subTree.q
 
