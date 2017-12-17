@@ -99,8 +99,8 @@ class _BattleshipSingleGame(object):
     def __init__(self, boardSize=10, ships=[2, 3, 3, 4, 5]):
         self.boardSize = boardSize
         self.actions = None
-        self.ships = ships
-        self.board, self.shipStatus = randomBoard(boardSize, ships)
+        self.ships = sorted(ships, reverse=True)
+        self.board, self.shipStatus = randomBoard(boardSize, self.ships)
         self.hits = []
         self.numHits = 0
         self.misses = []
@@ -213,14 +213,13 @@ def randomBoard(boardSize, ships):
 
     for ship in ships:
         shipsList.append([])
-        horizontal = np.random.rand() < .5
-        if horizontal:
-            placed = False
-            while not placed:
-                placeable = True
+        placed = False
+        while not placed:
+            horizontal = np.random.rand() < .5
+            placeable = True
+            if horizontal:
                 row = np.random.randint(0, boardSize)
                 col = np.random.randint(0, boardSize - ship)
-
                 for i in range(ship):
                     if board[row, col + i] != WATER:
                         placeable = False
@@ -231,13 +230,9 @@ def randomBoard(boardSize, ships):
                         board[row, col + i] = SHIP
                         shipsList[-1].append(((row, col + i), True))
                     placed = True
-        else:
-            placed = False
-            while not placed:
-                placeable = True
-                col = np.random.randint(0, boardSize)
+            else:
                 row = np.random.randint(0, boardSize - ship)
-
+                col = np.random.randint(0, boardSize)
                 for i in range(ship):
                     if board[row + i, col] != WATER:
                         placeable = False
