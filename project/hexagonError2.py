@@ -64,7 +64,7 @@ def makeMove(agent, game, player, epsilon):
 
 np.set_printoptions(suppress=True, precision=2)
 
-numGames = 1000
+numGames = 100000
 width = 5
 height = 5
 
@@ -82,12 +82,12 @@ configurations = [
         ((lambda val, num: 5 if num < 5 else val), "20")
     ),
     (
-        ((lambda: 1/(100+agent1.N.get((agent1.s.getHash(), agent1.a), 0))), "1/(100+x)"),
+        ((lambda: 1/(100+agent1.N.get((agent1.s.hash(), agent1.a), 0))), "1/(100+x)"),
         0.9,
         ((lambda val, num: 5 if num < 10 else val), "20")
     ),
     (
-        ((lambda: 1/(1000+agent1.N.get((agent1.s.getHash(), agent1.a), 0))), "1/(1000+x)"),
+        ((lambda: 1/(1000+agent1.N.get((agent1.s.hash(), agent1.a), 0))), "1/(1000+x)"),
         0.5,
         ((lambda val, num: 5 if num < 20 else val), "20")
     )
@@ -97,6 +97,7 @@ np.random.seed(2)
 startGame = HexaGrid(width, height)
 i = 0
 for conf in configurations:
+    plt.clf()
     gamma = conf[1]
     fileName = "realQ_{0}x{1}_gamma{2}".format(width, height, gamma)
     if not os.path.exists(fileName):
@@ -131,8 +132,6 @@ for conf in configurations:
     runningMeanNumber = 100
     numDataPoints = 500
 
-    allErrors = errors.copy()
-
     errors = np.convolve(errors, np.ones((runningMeanNumber,))/runningMeanNumber, mode='valid')
     count = 0
 
@@ -163,4 +162,3 @@ for conf in configurations:
     fig.savefig("outputs/ErrorPlot{0}.png".format(fileName))
 
     i += 1
-    errors = allErrors.copy()
