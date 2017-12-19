@@ -14,7 +14,8 @@ BACKGROUNDCOLOR = (150, 150, 150)
 P1COLOR = (30, 160, 0)
 P2COLOR = (0, 30, 255)
 BALLCOLOR = (255, 0, 0)
-PADDLEWIDTH = 8
+MBFRAMES = 100
+PADDLEWIDTH = 12
 
 class Pong(implements(IGame)):
     def __init__(self, width=100, height=50, ballVelocity=None, ballPosition=None):
@@ -25,9 +26,10 @@ class Pong(implements(IGame)):
         self.p2pos = self.height // 2
         self.p1Bounces = 0
         self.p2Bounces = 0
-        self.ballRadius = 2
+        self.ballRadius = 1
         self.paddleSpeed = 0.5
         self.paddleHeight = 15
+        self.ballPositions = []
         self.winner = None
         self.numFeatures = None
         self.lastP1Action = None
@@ -121,18 +123,32 @@ class Pong(implements(IGame)):
         pygame.gfxdraw.box(surface, (0, 0, self.width * sizeModifier + PADDLEWIDTH * 2, self.height * sizeModifier), BACKGROUNDCOLOR)
 
         # Paddle 1
-        p1Paddle = (0, int(self.p1pos - self.paddleHeight // 2) * sizeModifier, PADDLEWIDTH, self.paddleHeight * sizeModifier)
+        p1Paddle = (0, int(self.p1pos - self.paddleHeight / 2) * sizeModifier, PADDLEWIDTH, self.paddleHeight * sizeModifier)
         pygame.gfxdraw.box(surface, p1Paddle, P1COLOR)
 
         # Paddle 2
-        p2Paddle = (self.width * sizeModifier + PADDLEWIDTH, int(self.p2pos - self.paddleHeight // 2) * sizeModifier, PADDLEWIDTH, self.paddleHeight * sizeModifier)
+        p2Paddle = (self.width * sizeModifier + PADDLEWIDTH, int(self.p2pos - self.paddleHeight / 2) * sizeModifier, PADDLEWIDTH, self.paddleHeight * sizeModifier)
         pygame.gfxdraw.box(surface, p2Paddle, P2COLOR)
 
         # Ball
-        bX, bY = self.ballPosition * sizeModifier
-        pygame.gfxdraw.aacircle(surface, int(bX + PADDLEWIDTH), int(bY), int(self.ballRadius * sizeModifier), BALLCOLOR)
-        pygame.gfxdraw.filled_circle(surface, int(bX + PADDLEWIDTH), int(bY), int(self.ballRadius * sizeModifier), BALLCOLOR)
+        ballPos = self.ballPosition * sizeModifier
+        self.ballPositions.append(ballPos)
+
+        for i, position in enumerate(self.ballPositions):
+            col = interpolateRGB(BACKGROUNDCOLOR, BALLCOLOR, (i + 1) / len(self.ballPositions))
+            pygame.gfxdraw.aacircle(surface, int(position[0] + PADDLEWIDTH), int(position[1]), int(self.ballRadius * sizeModifier), col)
+            pygame.gfxdraw.filled_circle(surface, int(position[0] + PADDLEWIDTH), int(position[1]), int(self.ballRadius * sizeModifier), col)
+
+        if len(self.ballPositions) >= MBFRAMES:
+            self.ballPositions.pop(0)
+
         pygame.time.delay(6)
+
+
+def interpolateRGB(color1, color2, t):
+    r1, g1, b1 = color1
+    r2, g2, b2 = color2
+    return r1 + (r2 - r1) * t, g1 + (g2 - g1) * t, b1 + (b2 - b1) * t
 
 
 def simulatePlayerMove(state, action, player):

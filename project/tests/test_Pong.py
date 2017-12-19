@@ -70,7 +70,7 @@ class pongTest(TestCase):
         ballPosition = np.array([97, 47])
         ballVelocity = np.array([2, 2])
         pongGame = Pong(100, 50, ballVelocity, ballPosition)
-        pongGame.p2pos = 42.5
+        pongGame.p2pos = pongGame.height - pongGame.paddleHeight / 2
         expectedVelocity = np.array([-2, -2])
 
         result = updateBall(pongGame)
