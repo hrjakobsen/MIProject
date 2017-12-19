@@ -1,6 +1,6 @@
 import numpy as np
 from unittest import TestCase
-from games.battleship import Battleship
+from games.battleship import *
 from copy import deepcopy
 
 
@@ -10,25 +10,25 @@ class BattleShipTests(TestCase):
         self.initialGame = Battleship()
         """
             Player 1 board is:
-            [[0 0 0 0 0 1 0 0 0 0]
-             [0 0 0 1 0 1 0 0 0 0]
+            [[0 1 0 1 0 0 0 0 0 0]
+             [0 1 0 1 0 0 0 0 0 0]
+             [0 1 0 1 0 0 0 0 0 0]
              [0 0 0 1 0 0 0 0 0 0]
-             [0 0 0 1 0 0 0 0 0 0]
-             [0 0 1 1 1 1 1 1 0 0]
-             [0 0 1 0 0 0 0 0 0 0]
-             [0 0 1 0 0 0 0 0 0 0]
-             [0 0 0 0 0 0 0 0 0 0]
-             [1 1 1 1 0 0 0 0 0 0]
-             [0 0 0 0 0 0 0 0 0 0]]
+             [0 0 0 1 0 0 0 1 0 0]
+             [0 0 0 0 0 0 0 1 0 0]
+             [0 0 0 0 0 0 0 1 1 0]
+             [0 0 0 0 0 0 0 1 1 0]
+             [0 0 0 0 0 0 0 0 1 0]
+             [0 0 0 0 0 1 1 0 0 0]]
              
             Player 2 board is:
-            [[0 0 1 1 1 0 0 0 0 0]
-             [0 1 0 1 1 1 0 0 0 0]
-             [1 1 0 0 0 0 0 0 0 0]
-             [1 1 0 0 0 0 0 0 0 0]
-             [1 1 0 0 0 0 0 0 0 0]
-             [1 0 0 0 0 0 1 1 0 0]
-             [1 0 0 0 0 0 0 0 0 0]
+            [[0 1 0 0 0 0 0 1 1 0]
+             [0 1 0 0 0 0 0 0 0 0]
+             [0 1 0 0 0 0 0 0 0 0]
+             [0 0 0 1 1 1 0 0 0 0]
+             [0 0 0 1 1 1 1 1 0 0]
+             [1 1 1 1 0 0 0 0 0 0]
+             [0 0 0 0 0 0 0 0 0 0]
              [0 0 0 0 0 0 0 0 0 0]
              [0 0 0 0 0 0 0 0 0 0]
              [0 0 0 0 0 0 0 0 0 0]]
@@ -36,45 +36,43 @@ class BattleShipTests(TestCase):
 
     def testShootingWaterUpdatesBoard(self):
         game = deepcopy(self.initialGame)
-        waterValue = 2
 
         game.makeMove(1, (0, 0))
 
-        self.assertEqual(waterValue, game.p2Game.board[0, 0])
+        self.assertEqual(WATERHIT, game.p2Game.board[0, 0])
 
     def testShootingShipUpdatesBoard(self):
         game = deepcopy(self.initialGame)
-        shipValue = 3
 
-        game.makeMove(1, (0, 2))
+        game.makeMove(1, (0, 1))
 
-        self.assertEqual(shipValue, game.p2Game.board[0, 2])
+        self.assertEqual(SHIPHIT, game.p2Game.board[0, 1])
 
     def testShootingLastShipEndsGame(self):
         game = deepcopy(self.initialGame)
 
         shipLocations = [
-            (0, 2),
-            (0, 3),
-            (0, 4),
-
-            (1, 3),
-            (1, 4),
-            (1, 5),
-
-            (5, 6),
-            (5, 7),
-
+            (0, 1),
             (1, 1),
             (2, 1),
-            (3, 1),
-            (4, 1),
 
-            (2, 0),
-            (3, 0),
-            (4, 0),
+            (0, 7),
+            (0, 8),
+
+            (3, 3),
+            (3, 4),
+            (3, 5),
+
+            (4, 3),
+            (4, 4),
+            (4, 5),
+            (4, 6),
+            (4, 7),
+
             (5, 0),
-            (6, 0)
+            (5, 1),
+            (5, 2),
+            (5, 3),
         ]
 
         for loc in shipLocations:

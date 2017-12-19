@@ -34,7 +34,7 @@ class Trainer(object):
 
     def train(self, numGames, numRepeatGames, verbose):
         np.random.seed(self.playSeed)
-        interval = numGames / 100
+        interval = max(numGames / 100, 1)
 
         for x in range(numGames):
             if x % numRepeatGames == 0:
@@ -58,7 +58,7 @@ class Trainer(object):
     def play(self, numGames, verbose=False, visualise=False):
         np.random.seed(self.playSeed)
         self.recentOutcomes = []
-        interval = numGames / 100
+        interval = max(numGames / 100, 1)
         draw = True
 
         if visualise:

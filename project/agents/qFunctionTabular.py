@@ -65,7 +65,7 @@ class QFunctionTabular(implements(IAgent)):
 
     def _f(self, val, num):
         if num < 10:
-            return 5
+            return 2
         return val
 
     def _incrementN(self):

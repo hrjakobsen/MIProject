@@ -5,7 +5,7 @@ from interfaces import IAgent
 from interface import implements
 
 
-class QFunctionSGD(implements(IAgent)):
+class QFunctionGD(implements(IAgent)):
     def __init__(self, player, numFeatures, batchSize=100, gamma=1, alpha=0.1, decay=0.99, minWeight=0, maxWeight=0):
         """
         :param player: the id of the player this agent plays as

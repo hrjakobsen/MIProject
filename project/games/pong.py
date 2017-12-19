@@ -17,7 +17,7 @@ BALLCOLOR = (255, 0, 0)
 PADDLEWIDTH = 8
 
 class Pong(implements(IGame)):
-    def __init__(self, width=100, height= 50, ballVelocity=None, ballPosition=None):
+    def __init__(self, width=100, height=50, ballVelocity=None, ballPosition=None):
         self.width = width
         self.height = height
         self.ballPosition = np.array([width // 2, height // 2]) if ballPosition is None else ballPosition
@@ -33,7 +33,7 @@ class Pong(implements(IGame)):
         self.lastP1Action = None
         self.lastP2Action = None
         self.actions = [NOTHING, UP, DOWN]
-        self.turn = None
+        self.turn = self.turn = np.random.randint(2) + 1
         self.ballVelocity = ballVelocity
         if ballVelocity is None:
             direction = np.random.randint(180)
@@ -66,9 +66,6 @@ class Pong(implements(IGame)):
         return self.actions
 
     def getTurn(self):
-        if self.turn is None:
-            self.turn = np.random.randint(2) + 1
-
         return self.turn
 
     def getNumFeatures(self):
@@ -109,6 +106,9 @@ class Pong(implements(IGame)):
     def getReward(self, player):
         if player == 1 and self.p1Bounces == 1:
             self.p1Bounces = 0
+            return 1
+        elif player == 2 and self.p2Bounces == 1:
+            self.p2Bounces = 0
             return 1
         return 0
 
@@ -196,7 +196,7 @@ def updateBall(state):
         else:
             newPos = state.ballPosition + state.ballVelocity * factorPaddle
             paddlePos = state.p1pos if (newPos[0] < state.width / 2) else state.p2pos
-            if paddlePos - state.paddleHeight // 2 < newPos[1] < paddlePos + state.paddleHeight // 2:
+            if paddlePos - state.paddleHeight // 2 <= newPos[1] <= paddlePos + state.paddleHeight // 2:
                 # Bounced off paddle and then wall!
                 bounced = True
                 newVel[0] *= -1
@@ -283,7 +283,7 @@ def getAngle(state, player):
     #avoid division by 0
     lengthOfPaddleVec = 0.000001 if lengthOfPaddleVec == 0 else lengthOfPaddleVec
     dotProduct = np.dot(vector, state.ballVelocity)
-    angle = math.acos(dotProduct / np.dot(lengthOfPaddleVec, 1))
+    angle = math.acos(dotProduct / np.dot(lengthOfPaddleVec, math.sqrt(state.ballVelocity[0] * state.ballVelocity[0] + state.ballVelocity[1] * state.ballVelocity[1])))
 
     return angle
 
@@ -294,11 +294,11 @@ def getVectorBetweenBallAndPaddle(state, player):
     return np.array([playerX - state.ballPosition[0], playerY - state.ballPosition[1]])
 
 
-def distanceToBall(state, player):
-    paddleY = state.p1pos if player == 1 else state.p2pos
-    return (state.ballPosition[1] - paddleY) ** 2
-
-
 def distanceFromCenter(state, player):
     dist = abs(state.p1pos - state.height // 2) if player == 1 else abs(state.p2pos - state.height // 2)
     return dist // state.height
+
+
+def distanceToBall(state, player):
+    paddleY = state.p1pos if player == 1 else state.p2pos
+    return (state.ballPosition[1] - paddleY) ** 2
