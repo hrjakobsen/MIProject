@@ -16,9 +16,9 @@ BATTLESHIP = 0
 HEXAGRID = 1
 PONG = 2
 
-game = PONG
+game = BATTLESHIP
 numTrain = 500
-numPlay = 10
+numPlay = 100
 numRepeatGames = 10
 
 if game == BATTLESHIP:

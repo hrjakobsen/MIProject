@@ -30,6 +30,7 @@ class pongTest(TestCase):
         ballVelocity = np.array([0.5, 0.8])
         ballPosition = np.array([50, 48])
         pongGame = Pong(100, 50, ballVelocity, ballPosition)
+        pongGame.ballRadius = 2
         expectedVelocity = np.array([0.5, -0.8])
 
         result = updateBall(pongGame)
@@ -40,6 +41,7 @@ class pongTest(TestCase):
         ballVelocity = np.array([0.5, -0.8])
         ballPosition = np.array([50, 2])
         pongGame = Pong(100, 50, ballVelocity, ballPosition)
+        pongGame.ballRadius = 2
         expectedVelocity = np.array([0.5, 0.8])
 
         result = updateBall(pongGame)
@@ -70,6 +72,7 @@ class pongTest(TestCase):
         ballPosition = np.array([97, 47])
         ballVelocity = np.array([2, 2])
         pongGame = Pong(100, 50, ballVelocity, ballPosition)
+        pongGame.ballRadius = 2
         pongGame.p2pos = pongGame.height - pongGame.paddleHeight / 2
         expectedVelocity = np.array([-2, -2])
 

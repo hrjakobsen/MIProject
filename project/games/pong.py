@@ -10,11 +10,12 @@ UP = 1
 NOTHING = 0
 DOWN = -1
 
-BACKGROUNDCOLOR = (150, 150, 150)
+BACKGROUNDCOLOR = (255, 255, 255)
+FRAMECOLOR = (0, 0, 0)
 P1COLOR = (30, 160, 0)
 P2COLOR = (0, 30, 255)
 BALLCOLOR = (255, 0, 0)
-MBFRAMES = 100
+MBFRAMES = 6
 PADDLEWIDTH = 12
 
 class Pong(implements(IGame)):
@@ -120,7 +121,15 @@ class Pong(implements(IGame)):
     def draw(self, surface):
         surface.fill((0, 0, 0))
         sizeModifier = min((surface.get_width() - PADDLEWIDTH * 2) / self.width, surface.get_height() / self.height)
+
         pygame.gfxdraw.box(surface, (0, 0, self.width * sizeModifier + PADDLEWIDTH * 2, self.height * sizeModifier), BACKGROUNDCOLOR)
+
+        # Center line
+        pygame.gfxdraw.vline(surface, int(self.width * sizeModifier) // 2, 0, int(self.height * sizeModifier), FRAMECOLOR)
+
+        # Top and bottom lines
+        pygame.gfxdraw.box(surface, (0, 0, int(self.width * sizeModifier + 2 * PADDLEWIDTH), 2), FRAMECOLOR)
+        pygame.gfxdraw.box(surface, (0, int(self.height * sizeModifier), int(self.width * sizeModifier + 2 * PADDLEWIDTH), 2), FRAMECOLOR)
 
         # Paddle 1
         p1Paddle = (0, int(self.p1pos - self.paddleHeight / 2) * sizeModifier, PADDLEWIDTH, self.paddleHeight * sizeModifier)
@@ -142,7 +151,7 @@ class Pong(implements(IGame)):
         if len(self.ballPositions) >= MBFRAMES:
             self.ballPositions.pop(0)
 
-        pygame.time.delay(6)
+        pygame.time.delay(600)
 
 
 def interpolateRGB(color1, color2, t):

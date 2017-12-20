@@ -12,7 +12,7 @@ class Trainer(object):
         self.epsilon = epsilon
         self.playSeed = playSeed
         self.trainSeed = trainSeed
-        self.resolution = (1920, 1080)
+        self.resolution = (1600, 800)
         self.recentOutcomes = None
 
     def run(self, numPlays, numTrains, numRepeatGames, verbose=False, visualise=False):
