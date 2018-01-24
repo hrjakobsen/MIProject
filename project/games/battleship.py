@@ -140,8 +140,8 @@ class _BattleshipSingleGame(object):
 
     def calculateFeatures(self, action):
         board = []
-        for y in range(self.board.shape[0]):
-            for x in range(self.board.shape[1]):
+        for y in range(self.boardSize):
+            for x in range(self.boardSize):
                 if action[0] == y and action[1] == x:
                     board.append(1)
                 elif self.board[y, x] == SHIPHIT:

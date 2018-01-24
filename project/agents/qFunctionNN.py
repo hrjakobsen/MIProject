@@ -49,7 +49,6 @@ class QFunctionNN(implements(IAgent)):
         learning_rate = 0.7
         gamma = 1
         Y = (1-learning_rate)*currentEstimate + learning_rate * (reward + gamma * bestQ)
-        print(currentEstimate - Y)
         inputFeatures = np.array(self.s.getFeatures(self.player, self.a))
         self.model.fit(np.reshape(inputFeatures, (1, self.numFeatures)), np.array([Y]), verbose=0)
 
@@ -66,7 +65,7 @@ class QFunctionNN(implements(IAgent)):
     def finalize(self, state):
         if self.s is not None:
             inputFeatures = np.array(self.s.getFeatures(self.player, self.a))
-            self.model.fit(np.reshape(inputFeatures, (1, self.numFeatures)), np.array([self.s.getReward(self.player)]), verbose=0)
+            self.model.fit(np.reshape(inputFeatures, (1, self.numFeatures)), np.array([state.getReward(self.player)]), verbose=0)
         self.a, self.s = None, None
 
     def getInfo(self):
