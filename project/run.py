@@ -20,9 +20,9 @@ HEXAGRID = 1
 PONG = 2
 
 game = BATTLESHIP
-numTrain = 20
+numTrain = 2000
 numPlay = 2
-numRepeatGames = 20
+numRepeatGames = 2000
 
 if game == BATTLESHIP:
     boardSize = 10
@@ -47,3 +47,5 @@ agent2 = QFunctionNN(2, gameFunc().getNumFeatures())
 
 trainer = Trainer(agent1, agent2, gameFunc)
 trainer.run(numPlay, numTrain, numRepeatGames, verbose=True, visualise=True)
+
+agent2.model.save('nntest')
