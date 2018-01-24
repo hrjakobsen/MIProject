@@ -139,6 +139,23 @@ class _BattleshipSingleGame(object):
         return not np.any(self.board == SHIP)
 
     def calculateFeatures(self, action):
+        board = []
+        for y in range(self.board.shape[0]):
+            for x in range(self.board.shape[1]):
+                if action[0] == y and action[1] == x:
+                    board.append(1)
+                elif self.board[y, x] == SHIPHIT:
+                    board.append(2)
+                elif self.board[y, x] == WATERHIT:
+                    board.append(-1)
+                elif self.board[y, x] == SHIPSUNK:
+                    board.append(3)
+                else:
+                    board.append(0)
+
+        return board
+
+    def calculateFeaturesOld(self, action):
         results = np.array([
             1,
             distanceToSquares(self, action, self.misses),
