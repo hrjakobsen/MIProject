@@ -34,18 +34,46 @@ class Trainer(object):
 
     def train(self, numGames, numRepeatGames, verbose):
         np.random.seed(self.playSeed)
+        self.recentOutcomes = []
         interval = max(numGames / 100, 1)
+        draw = True
+        visualise = True
+
+        if visualise:
+            pygame.init()
+            pygame.display.set_mode(self.resolution)
+            surface = pygame.display.get_surface()
 
         for x in range(numGames):
-            if x % numRepeatGames == 0:
-                startGame = self.gameFunction()
-            game = copy.deepcopy(startGame)
+            game = self.gameFunction()
+
+            if visualise:
+                p1Wins, p2Wins, draws = self.countOutcomes()
+                pygame.display.set_caption("Player 1: {} | Player 2: {} | Draws: {}".format(p1Wins, p2Wins, draws))
 
             while not game.gameEnded():
+                if visualise:
+                    if draw:
+                        game.draw(surface)
+                        pygame.display.flip()
+
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            return
+                        elif event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_t:
+                                draw = not draw
+                            elif event.key == pygame.K_q:
+                                pygame.quit()
+                                return
+
                 if game.getTurn() == 1:
                     makeMove(self.agent1, game, 1, self.epsilon)
                 else:
                     makeMove(self.agent2, game, 2, self.epsilon)
+
+            self.recentOutcomes.append(game.getWinner())
 
             self.agent1.finalize(game)
             self.agent2.finalize(game)
